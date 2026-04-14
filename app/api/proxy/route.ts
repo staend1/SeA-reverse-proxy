@@ -1,0 +1,127 @@
+import { NextRequest } from "next/server";
+
+export const runtime = "edge";
+
+export async function GET(request: NextRequest) {
+  const targetUrl = request.nextUrl.searchParams.get("url");
+  if (!targetUrl) {
+    return new Response("Missing url param", { status: 400 });
+  }
+
+  let fullUrl: URL;
+  try {
+    fullUrl = new URL(targetUrl);
+  } catch {
+    return new Response("Invalid url", { status: 400 });
+  }
+
+  const origin = fullUrl.origin;
+  const proxyOrigin = `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+
+  try {
+    const resp = await fetch(fullUrl.toString(), {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+      },
+      redirect: "follow",
+    });
+
+    const contentType = resp.headers.get("content-type") || "";
+
+    // Patch sdr-widget.js
+    if (fullUrl.pathname.endsWith("sdr-widget.js") || fullUrl.pathname.endsWith("sdr-widget-v2.js")) {
+      let js = await resp.text();
+      const targetOrigin = fullUrl.origin;
+
+      // Patch origin extraction for both v1 and v2
+      js = js.replace(
+        /var origin\s*=\s*script\.src\.replace\(.+?\);/,
+        `var origin = '${targetOrigin}';`
+      );
+      js = js.replace(
+        "if (event.origin !== origin) return;",
+        `if (event.origin !== origin && event.origin !== '${proxyOrigin}') return;`
+      );
+
+      const locationPatch = `;(function(){
+  if (typeof window.__sdrPageUrl !== 'string') {
+    window.__sdrPageUrl = window.location.href;
+  }
+})();\n`;
+      js = js.replace(
+        /location\.href/g,
+        "(window.__sdrPageUrl||location.href)"
+      );
+
+      return new Response(locationPatch + js, {
+        headers: {
+          "content-type": "application/javascript; charset=utf-8",
+          "access-control-allow-origin": "*",
+          "cache-control": "no-cache",
+        },
+      });
+    }
+
+    // Non-HTML → redirect to original
+    if (!contentType.includes("text/html")) {
+      return Response.redirect(fullUrl.toString(), 302);
+    }
+
+    // HTML → strip frame-busting, remove original widgets, inject <base>
+    let html = await resp.text();
+
+    // Proxy script: replaceState for hydration + URL notification + link intercept + ChannelTalk kill
+    const injectedScripts = `<script data-proxy="1">(function(){
+var ORIGIN='${origin}';
+var PROXY=location.origin+'/api/proxy?url=';
+var targetUrl=new URLSearchParams(location.search).get('url')||ORIGIN;
+try{var t=new URL(targetUrl);history.replaceState({},'',t.pathname+t.search+t.hash)}catch(e){}
+try{parent.postMessage({type:'proxy-navigation',url:targetUrl},'*')}catch(e){}
+var noop=function(){};noop.q=[];noop.c=noop;window.ChannelIO=noop;window.ChannelIOInitialized=true;
+new MutationObserver(function(){
+document.querySelectorAll('#ch-plugin,[id^="ch-plugin"],iframe[src*="channel.io"],[class*="ch-desk"],[id*="channel"]').forEach(function(el){el.remove()});
+}).observe(document.documentElement,{childList:true,subtree:true});
+document.addEventListener('click',function(e){
+var a=e.target.closest('a');
+if(!a||!a.href)return;
+var h=a.href;
+if(h.startsWith(ORIGIN)){
+e.preventDefault();
+e.stopImmediatePropagation();
+location.assign(PROXY+encodeURIComponent(h));
+}
+},true);
+})();</script>`;
+
+    // Remove only ChannelTalk + SDR widget scripts (keep all other scripts for UI interactions)
+    html = html.replace(/<script[^>]*sdr-widget(?:-v2)?\.js[^>]*><\/script>/gi, "");
+    html = html.replace(/<script[^>]*channel\.io[^>]*><\/script>/gi, "");
+    html = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, body) => {
+      if (/ChannelIO/i.test(body)) return "";
+      return match;
+    });
+    // Inject our script (AFTER removing ChannelIO scripts, since ours contains the keyword)
+    html = html.replace(/<head([^>]*)>/i, `<head$1>${injectedScripts}<base href="${origin}/">`);
+    // Remove frame-busting patterns
+    html = html.replace(
+      /if\s*\(\s*(?:top|window\.top|parent)\s*!==?\s*(?:self|window\.self|window)\s*\)[^}]*}/gi,
+      ""
+    );
+
+    return new Response(html, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "x-frame-options": "ALLOWALL",
+      },
+    });
+  } catch (err) {
+    return new Response(`Proxy error: ${err}`, { status: 502 });
+  }
+}
