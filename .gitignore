@@ -1,3 +1,6 @@
 node_modules
 .next
 next-env.d.ts
+.playwright-mcp/
+.claude/
+*.png
