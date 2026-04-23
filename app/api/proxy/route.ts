@@ -66,7 +66,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Non-HTML → redirect to original
+    // JS/CSS → proxy directly (redirect fails for dynamically injected scripts)
+    if (contentType.includes("javascript") || contentType.includes("text/css")) {
+      const body = await resp.text();
+      return new Response(body, {
+        status: resp.status,
+        headers: {
+          "content-type": contentType,
+          "access-control-allow-origin": "*",
+          "cache-control": "public, max-age=31536000, immutable",
+        },
+      });
+    }
+
+    // Other non-HTML → redirect to original
     if (!contentType.includes("text/html")) {
       return Response.redirect(fullUrl.toString(), 302);
     }
@@ -98,6 +111,16 @@ location.assign(PROXY+encodeURIComponent(h));
 },true);
 // Intercept fetch/XHR: relative paths + proxy-origin absolute URLs → original server
 // Next.js uses absolute URLs with the current page origin for /_next/data/ and RSC fetches
+// Override history API: Next.js router tries replaceState/pushState with cross-origin URLs → SecurityError
+// Strip origin so only path+search+hash is used
+var _origReplaceState=history.replaceState.bind(history);
+var _origPushState=history.pushState.bind(history);
+var _safeUrl=function(u){
+try{var p=new URL(u);if(p.origin!==location.origin){return p.pathname+p.search+p.hash;}}catch(e){}
+return u;
+};
+history.replaceState=function(s,t,u){try{_origReplaceState(s,t,u!=null?_safeUrl(u):u);}catch(e){}};
+history.pushState=function(s,t,u){try{_origPushState(s,t,u!=null?_safeUrl(u):u);}catch(e){}};
 var PROXY_ORIGIN=location.origin;
 var _toAbs=function(u){
 if(typeof u!=='string')return u;
