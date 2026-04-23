@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
 
     const contentType = resp.headers.get("content-type") || "";
 
-    // Patch sdr-widget.js
-    if (fullUrl.pathname.endsWith("sdr-widget.js") || fullUrl.pathname.endsWith("sdr-widget-v2.js")) {
+    // Patch sdr-widget.js (any version: sdr-widget.js, sdr-widget-v1-1.js, sdr-widget-v2.js, ...)
+    if (/\/sdr-widget[^/]*\.js$/.test(fullUrl.pathname)) {
       let js = await resp.text();
       const targetOrigin = fullUrl.origin;
 
@@ -146,7 +146,7 @@ return _origOpen.apply(this,args);
 })();</script>`;
 
     // Remove only ChannelTalk + SDR widget scripts (keep all other scripts for UI interactions)
-    html = html.replace(/<script[^>]*sdr-widget(?:-v2)?\.js[^>]*><\/script>/gi, "");
+    html = html.replace(/<script[^>]*sdr-widget[^"']*\.js[^>]*><\/script>/gi, "");
     html = html.replace(/<script[^>]*channel\.io[^>]*><\/script>/gi, "");
     html = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, body) => {
       if (/ChannelIO/i.test(body)) return "";

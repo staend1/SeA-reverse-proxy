@@ -50,7 +50,7 @@ function ViewInner() {
       widgetEnv === "prod"
         ? "https://salesmap.kr"
         : "https://dev.salesmap.kr";
-    const widgetSrc = `/api/proxy?url=${encodeURIComponent(`${widgetHost}/sdr-widget-v2.js`)}`;
+    const widgetSrc = `/api/proxy?url=${encodeURIComponent(`${widgetHost}/sdr-widget-v1-1.js`)}`;
     const script = document.createElement("script");
     script.src = widgetSrc;
     script.setAttribute("data-code", dataCode);
