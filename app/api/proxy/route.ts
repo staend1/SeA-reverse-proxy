@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     let html = await resp.text();
 
     // Proxy script: replaceState for hydration + URL notification + link intercept + ChannelTalk kill
+    // + fetch/XHR interceptor to fix SPA relative-path API calls
     const injectedScripts = `<script data-proxy="1">(function(){
 var ORIGIN='${origin}';
 var PROXY=location.origin+'/api/proxy?url=';
@@ -95,6 +96,26 @@ e.stopImmediatePropagation();
 location.assign(PROXY+encodeURIComponent(h));
 }
 },true);
+// Intercept fetch/XHR so SPA relative-path API calls go to the original server, not the proxy
+var _toAbs=function(u){
+if(typeof u==='string'&&u.charAt(0)==='/'&&u.charAt(1)!=='/'){return ORIGIN+u;}
+return u;
+};
+var _origFetch=window.fetch;
+window.fetch=function(resource,opts){
+if(typeof resource==='string'){resource=_toAbs(resource);}
+else if(resource&&typeof resource==='object'&&resource.url){
+var u2=_toAbs(resource.url);
+if(u2!==resource.url){resource=new Request(u2,resource);}
+}
+return _origFetch.call(this,resource,opts);
+};
+var _origOpen=XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open=function(method,url){
+var args=Array.prototype.slice.call(arguments);
+args[1]=_toAbs(url);
+return _origOpen.apply(this,args);
+};
 })();</script>`;
 
     // Remove only ChannelTalk + SDR widget scripts (keep all other scripts for UI interactions)
