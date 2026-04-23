@@ -1,0 +1,49 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "패스트캠퍼스 기업교육 로고" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "패스트캠퍼스 기업교육 로고" [ref=e8]
+        - generic [ref=e9]:
+          - list
+          - link "기업교육 문의하기" [ref=e10] [cursor=pointer]:
+            - /url: /contact
+    - button "pause" [ref=e13] [cursor=pointer]:
+      - generic [ref=e14]: pause
+      - img [ref=e15]
+    - contentinfo [ref=e17]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - list [ref=e23]:
+                - listitem [ref=e24]: (주) 데이원컴퍼니
+                - listitem [ref=e25]: "공동대표이사: 신해동, 김동혁"
+                - listitem [ref=e26]: "사업자번호: 810-86-00658"
+                - listitem [ref=e27]: b2b@day1company.co.kr, 02-501-7429
+              - list [ref=e28]:
+                - listitem [ref=e29]: "개인정보 보호책임자: 김동혁"
+                - listitem [ref=e30]: "사무실: 서울특별시 강남구 테헤란로 231, 센터필드 WEST 6층, 7층"
+                - listitem [ref=e31]: "교육장: 서울특별시 강남구 강남대로 364 미왕빌딩 10, 11층"
+            - link "개인정보 처리방침" [ref=e32] [cursor=pointer]:
+              - /url: /info/policies/privacy
+          - list [ref=e33]:
+            - listitem [ref=e34]:
+              - link "패스트캠퍼스 페이스북" [ref=e35] [cursor=pointer]:
+                - /url: https://www.facebook.com/b2bfastcampus
+                - img "패스트캠퍼스 페이스북" [ref=e36]
+            - listitem [ref=e37]:
+              - link "패스트캠퍼스 카카오톡 채널" [ref=e38] [cursor=pointer]:
+                - /url: https://pf.kakao.com/_LxbMxnb
+                - img "패스트캠퍼스 카카오톡 채널" [ref=e39]
+            - listitem [ref=e40]:
+              - link "패스트캠퍼스 네이버 블로그" [ref=e41] [cursor=pointer]:
+                - /url: https://blog.naver.com/fastcampus
+                - img "패스트캠퍼스 네이버 블로그" [ref=e42]
+            - listitem [ref=e43]:
+              - link "패스트캠퍼스 링크드인 링크" [ref=e44] [cursor=pointer]:
+                - /url: https://www.linkedin.com/showcase/b2bfastcampus
+                - img "패스트캠퍼스 링크드인 링크" [ref=e45]
+        - paragraph [ref=e46]: Copyright © 2021 (주) 데이원컴퍼니. All rights reserved.
+  - alert [ref=e47]
