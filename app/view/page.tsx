@@ -98,7 +98,7 @@ function ViewInner() {
       {/* Proxied site */}
       <iframe
         src={proxyUrl}
-        className="flex-1 w-full border-none"
+        className="flex-1 w-full border-none bg-white"
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
       />
     </div>

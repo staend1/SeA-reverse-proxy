@@ -1,0 +1,275 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "패스트캠퍼스 기업교육 로고" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "패스트캠퍼스 기업교육 로고" [ref=e8]
+        - generic [ref=e9]:
+          - list [ref=e10]:
+            - listitem [ref=e11]:
+              - generic [ref=e12]: 서비스 소개
+            - listitem [ref=e14]:
+              - generic [ref=e15]: 생성형 AI 활용
+            - listitem [ref=e17]:
+              - generic [ref=e18]: LMS
+            - listitem [ref=e20]:
+              - generic [ref=e21]: 진단
+            - listitem [ref=e23]:
+              - generic [ref=e24]: 공개교육
+            - listitem [ref=e26]:
+              - generic [ref=e27]: 공공
+            - listitem [ref=e29]:
+              - generic [ref=e30]: 교육 사례
+            - listitem [ref=e32]:
+              - generic [ref=e33]: 블로그
+          - link "기업교육 문의하기" [ref=e35] [cursor=pointer]:
+            - /url: /contact
+    - heading "패스트캠퍼스 기업교육 문의하기" [level=1] [ref=e36]
+    - heading "DX" [level=2] [ref=e37]
+    - heading "온라인 기업교육" [level=2] [ref=e38]
+    - main [ref=e39]:
+      - paragraph [ref=e44]:
+        - generic [ref=e45]:
+          - text: 교육문의는 비용이 들지 않습니다.
+          - text: 패스트캠퍼스가 함께 고민해드릴게요.
+      - paragraph [ref=e50]:
+        - text: 임직원 교육에 대해 어떤 고민이든 문의를 남겨주시면
+        - text: 가능한 빠르게 답변드리겠습니다.
+      - paragraph [ref=e55]:
+        - iframe [ref=e57]:
+          - generic [ref=f1e4]:
+            - generic [ref=f1e5]:
+              - generic [ref=f1e6]:
+                - generic [ref=f1e7]:
+                  - generic [ref=f1e8]: 문의 서비스 (중복 선택)
+                  - generic [ref=f1e9]: "*"
+                - button [ref=f1e10] [cursor=pointer]:
+                  - img [ref=f1e11]
+              - generic [ref=f1e13]:
+                - generic [ref=f1e14]:
+                  - generic [ref=f1e15]: 예상 교육 인원
+                  - generic [ref=f1e16]: "*"
+                - generic [ref=f1e17]: 예상되는 수강 인원을 선택해 주세요.
+                - button [ref=f1e18] [cursor=pointer]:
+                  - img [ref=f1e19]
+              - generic [ref=f1e21]:
+                - generic [ref=f1e22]:
+                  - generic [ref=f1e23]: 예상 교육 시작 일정
+                  - generic [ref=f1e24]: "*"
+                - generic [ref=f1e25]: 교육을 시작할 것으로 예상되는 일정을 선택해 주세요.
+                - button [ref=f1e26] [cursor=pointer]:
+                  - img [ref=f1e27]
+              - generic [ref=f1e29]:
+                - generic [ref=f1e30]:
+                  - generic [ref=f1e31]: 기업명
+                  - generic [ref=f1e32]: "*"
+                - textbox [ref=f1e34]
+              - generic [ref=f1e35]:
+                - generic [ref=f1e36]:
+                  - generic [ref=f1e37]: 기업 유형
+                  - generic [ref=f1e38]: "*"
+                - button [ref=f1e39] [cursor=pointer]:
+                  - img [ref=f1e40]
+              - generic [ref=f1e42]:
+                - generic [ref=f1e43]:
+                  - generic [ref=f1e44]: 이름
+                  - generic [ref=f1e45]: "*"
+                - generic [ref=f1e46]: 상담을 원하는 담당자 분의 성함을 작성해 주세요.
+                - textbox [ref=f1e47]
+              - generic [ref=f1e48]:
+                - generic [ref=f1e49]:
+                  - generic [ref=f1e50]: 회사 이메일
+                  - generic [ref=f1e51]: "*"
+                - generic [ref=f1e52]: 원활한 안내를 위해 업무용 이메일을 제출해 주세요.
+                - textbox [ref=f1e53]
+              - generic [ref=f1e54]:
+                - generic [ref=f1e55]:
+                  - generic [ref=f1e56]: 휴대전화번호
+                  - generic [ref=f1e57]: "*"
+                - generic [ref=f1e58]: 원활한 안내를 위해 11자리를 정확하게 작성 부탁 드립니다. (ex. 010-1234-5678)
+                - textbox [ref=f1e59]
+              - generic [ref=f1e60]:
+                - generic [ref=f1e62]: 상담 문의 내용
+                - generic [ref=f1e63]: ※ 교육 목적 및 수강 대상을 포함해 상담을 원하는 내용을 구체적으로 작성해 주시면, 더욱 빠르고 정확하게 안내해 드릴 수 있습니다.
+                - textbox [ref=f1e64]
+              - generic [ref=f1e65]:
+                - generic [ref=f1e66]:
+                  - generic [ref=f1e67] [cursor=pointer]:
+                    - text: 개인정보 수집 및 이용동의
+                    - img [ref=f1e68]
+                  - generic [ref=f1e70]: "*"
+                - generic [ref=f1e71]: 개인 정보 보호 정책에 설명된 대로 (주)데이원컴퍼니 패스트캠퍼스 CIC가 귀하의 개인 데이터를 처리하는 것에 동의합니다.
+                - generic [ref=f1e73] [cursor=pointer]:
+                  - checkbox "동의합니다." [ref=f1e74]
+                  - generic [ref=f1e75]: 동의합니다.
+              - generic [ref=f1e76]:
+                - generic [ref=f1e77]:
+                  - generic [ref=f1e78]: 마케팅 수신 동의
+                  - generic [ref=f1e79]: "*"
+                - generic [ref=f1e80]: 동의 시, 무료 교육 자료 발간 및 행사 소식을 가장 먼저 받아보실 수 있습니다.
+                - generic [ref=f1e81]:
+                  - generic [ref=f1e82] [cursor=pointer]:
+                    - radio "동의합니다." [ref=f1e83]
+                    - generic [ref=f1e84]: 동의합니다.
+                  - generic [ref=f1e85] [cursor=pointer]:
+                    - radio "동의하지 않습니다." [ref=f1e86]
+                    - generic [ref=f1e87]: 동의하지 않습니다.
+            - button "문의하기" [ref=f1e88] [cursor=pointer]
+            - link "by SalesMap" [ref=f1e90] [cursor=pointer]:
+              - /url: https://salesmap.kr
+              - img [ref=f1e91]
+              - generic [ref=f1e93]: by SalesMap
+    - contentinfo [ref=e58]:
+      - generic [ref=e60]:
+        - list [ref=e61]:
+          - listitem [ref=e62]:
+            - generic [ref=e63]: 서비스 소개
+            - list [ref=e64]:
+              - listitem [ref=e65]:
+                - link "온라인 교육 (LMS)" [ref=e66] [cursor=pointer]:
+                  - /url: /service_subs
+              - listitem [ref=e67]:
+                - link "AI 활용 교육 (출강)" [ref=e68] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation
+          - listitem [ref=e69]:
+            - generic [ref=e70]: 생성형 AI 활용
+            - list [ref=e71]:
+              - listitem [ref=e72]:
+                - link "직무 공통 교육" [ref=e73] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_all
+              - listitem [ref=e74]:
+                - link "직무 특화 교육" [ref=e75] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_job
+              - listitem [ref=e76]:
+                - link "└ IT · 개발 · 엔지니어링" [ref=e77] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_it
+              - listitem [ref=e78]:
+                - link "└ 연구개발 · 생산" [ref=e79] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_rnd
+              - listitem [ref=e80]:
+                - link "└ 마케팅 · 서비스 기획" [ref=e81] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_mkt
+              - listitem [ref=e82]:
+                - link "└ HR · 경영지원 · 재무" [ref=e83] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_support
+              - listitem [ref=e84]:
+                - link "AI 해커톤" [ref=e85] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aieducation_hackathon
+              - listitem [ref=e86]:
+                - link "AI 워크숍" [ref=e87] [cursor=pointer]:
+                  - /url: /service_aieducation_workshop
+              - listitem [ref=e88]:
+                - link "AI 리더십 교육" [ref=e89] [cursor=pointer]:
+                  - /url: /service_aieducation_leadership
+          - listitem [ref=e90]:
+            - generic [ref=e91]: LMS
+            - list [ref=e92]:
+              - listitem [ref=e93]:
+                - link "엔터프라이즈 전용" [ref=e94] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_online_enterprise
+              - listitem [ref=e95]:
+                - link "콘텐츠 소개" [ref=e96] [cursor=pointer]:
+                  - /url: /service_online_contents
+              - listitem [ref=e97]:
+                - link "LMS 기능 소개" [ref=e98] [cursor=pointer]:
+                  - /url: /service_online_skillflo
+              - listitem [ref=e99]:
+                - link "중소기업 전용 서비스" [ref=e100] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_online_skillflolite
+          - listitem [ref=e101]:
+            - generic [ref=e102]: 진단
+            - list [ref=e103]:
+              - listitem [ref=e104]:
+                - link "스킬 진단/평가" [ref=e105] [cursor=pointer]:
+                  - /url: /service_skillmatch
+              - listitem [ref=e106]:
+                - link "└ 업종별 스킬 진단 사례" [ref=e107] [cursor=pointer]:
+                  - /url: /resource_casebook_skillmatch
+          - listitem [ref=e108]:
+            - generic [ref=e109]: 공개교육
+            - list [ref=e110]:
+              - listitem [ref=e111]:
+                - link "전체 과정 살펴보기" [ref=e112] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_aicamp
+              - listitem [ref=e113]:
+                - link "└ 클로드코드 단기 완성🔥" [ref=e114] [cursor=pointer]:
+                  - /url: /service_aicamp_claudecode
+          - listitem [ref=e115]:
+            - generic [ref=e116]: 공공
+            - list [ref=e117]:
+              - listitem [ref=e118]:
+                - link "공공 특화 교육/컨설팅" [ref=e119] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/service_public
+              - listitem [ref=e120]:
+                - link "└ 공공 특화 사례" [ref=e121] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/refer_publicgovernment
+              - listitem [ref=e122]:
+                - link "└ 대학 특화 사례" [ref=e123] [cursor=pointer]:
+                  - /url: https://b2b.fastcampus.co.kr/refer_publicuniversity
+          - listitem [ref=e124]:
+            - generic [ref=e125]: 교육 사례
+            - list [ref=e126]:
+              - listitem [ref=e127]:
+                - link "산업별 교육 운영 사례" [ref=e128] [cursor=pointer]:
+                  - /url: /refer_customer
+              - listitem [ref=e129]:
+                - link "[사례집] 생성형 AI 교육" [ref=e130] [cursor=pointer]:
+                  - /url: /resource_casebook
+              - listitem [ref=e131]:
+                - link "[사례집] 온라인 교육" [ref=e132] [cursor=pointer]:
+                  - /url: /resource_casebook_online
+              - listitem [ref=e133]:
+                - link "[사례집] 업종별 스킬 진단" [ref=e134] [cursor=pointer]:
+                  - /url: /resource_casebook_skillmatch
+          - listitem [ref=e135]:
+            - generic [ref=e136]: 블로그
+            - list [ref=e137]:
+              - listitem [ref=e138]:
+                - link "공식 블로그" [ref=e139] [cursor=pointer]:
+                  - /url: /resource_insight
+              - listitem [ref=e140]:
+                - link "뉴스레터" [ref=e141] [cursor=pointer]:
+                  - /url: /resource_bizletter
+              - listitem [ref=e142]:
+                - link "교육 설계 가이드" [ref=e143] [cursor=pointer]:
+                  - /url: /resource_report
+              - listitem [ref=e144]:
+                - link "무료 템플릿" [ref=e145] [cursor=pointer]:
+                  - /url: /resource_template
+              - listitem [ref=e146]:
+                - link "트렌드 세미나" [ref=e147] [cursor=pointer]:
+                  - /url: /resource_seminar
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - list [ref=e151]:
+                - listitem [ref=e152]: (주) 데이원컴퍼니
+                - listitem [ref=e153]: "공동대표이사: 신해동, 김동혁"
+                - listitem [ref=e154]: "사업자번호: 810-86-00658"
+                - listitem [ref=e155]: b2b@day1company.co.kr, 02-501-7429
+              - list [ref=e156]:
+                - listitem [ref=e157]: "개인정보 보호책임자: 김동혁"
+                - listitem [ref=e158]: "사무실: 서울특별시 강남구 테헤란로 231, 센터필드 WEST 6층, 7층"
+                - listitem [ref=e159]: "교육장: 서울특별시 강남구 강남대로 364 미왕빌딩 10, 11층"
+            - link "개인정보 처리방침" [ref=e160] [cursor=pointer]:
+              - /url: /info/policies/privacy
+          - list [ref=e161]:
+            - listitem [ref=e162]:
+              - link "패스트캠퍼스 페이스북" [ref=e163] [cursor=pointer]:
+                - /url: https://www.facebook.com/b2bfastcampus
+                - img "패스트캠퍼스 페이스북" [ref=e164]
+            - listitem [ref=e165]:
+              - link "패스트캠퍼스 카카오톡 채널" [ref=e166] [cursor=pointer]:
+                - /url: https://pf.kakao.com/_LxbMxnb
+                - img "패스트캠퍼스 카카오톡 채널" [ref=e167]
+            - listitem [ref=e168]:
+              - link "패스트캠퍼스 네이버 블로그" [ref=e169] [cursor=pointer]:
+                - /url: https://blog.naver.com/fastcampus
+                - img "패스트캠퍼스 네이버 블로그" [ref=e170]
+            - listitem [ref=e171]:
+              - link "패스트캠퍼스 링크드인 링크" [ref=e172] [cursor=pointer]:
+                - /url: https://www.linkedin.com/showcase/b2bfastcampus
+                - img "패스트캠퍼스 링크드인 링크" [ref=e173]
+        - paragraph [ref=e174]: Copyright © 2021 (주) 데이원컴퍼니. All rights reserved.
+  - alert [ref=e175]
