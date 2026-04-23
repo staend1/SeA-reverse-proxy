@@ -96,9 +96,13 @@ e.stopImmediatePropagation();
 location.assign(PROXY+encodeURIComponent(h));
 }
 },true);
-// Intercept fetch/XHR so SPA relative-path API calls go to the original server, not the proxy
+// Intercept fetch/XHR: relative paths + proxy-origin absolute URLs → original server
+// Next.js uses absolute URLs with the current page origin for /_next/data/ and RSC fetches
+var PROXY_ORIGIN=location.origin;
 var _toAbs=function(u){
-if(typeof u==='string'&&u.charAt(0)==='/'&&u.charAt(1)!=='/'){return ORIGIN+u;}
+if(typeof u!=='string')return u;
+if(u.charAt(0)==='/'&&u.charAt(1)!=='/'){return ORIGIN+u;}
+if(u.startsWith(PROXY_ORIGIN+'/')){return ORIGIN+u.slice(PROXY_ORIGIN.length);}
 return u;
 };
 var _origFetch=window.fetch;
