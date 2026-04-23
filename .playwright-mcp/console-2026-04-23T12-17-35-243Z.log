@@ -1,0 +1,140 @@
+[     350ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://sea-reverse-proxy.vercel.app/api/proxy?url=https%3A%2F%2Fb2b.fastcampus.co.kr%2Fcontact:0
+[     379ms] [LOG] ##### start v2 ##### @ https://salesmap.kr/web-form-loader-v2.js:2
+[     496ms] [WARNING] [Meta pixel] 246958609938414 is unavailable on this website due to it's traffic permission settings. Go to https://www.facebook.com/business/help/572690630080597 to learn more. @ https://connect.facebook.net/en_US/fbevents.js:181
+[     496ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 246958609938414. @ https://connect.facebook.net/en_US/fbevents.js:181
+[     527ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sea-reverse-proxy.vercel.app/favicon.ico:0
+[     591ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://dev.salesmap.kr/sdr-chat/019dba0a-ed45-7000-898d-d79fcb8ab5bc:0
+[     591ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://dev.salesmap.kr/sdr-chat/019dba0a-ed45-7000-898d-d79fcb8ab5bc:0
+[    1054ms] [WARNING] [Meta pixel] 246958609938414 is unavailable on this website due to it's traffic permission settings. Go to https://www.facebook.com/business/help/572690630080597 to learn more. @ https://connect.facebook.net/en_US/fbevents.js:181
+[    1361ms] TypeError: Cannot read properties of undefined (reading 'env')
+    at https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/entry.client-DqGQIqDt.js:1:893
+[    1428ms] [ERROR] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583) @ https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:15
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1437ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Eg (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:6:5214)
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50544)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Mk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43976)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38402)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    1438ms] Error: Minified React error #423; visit https://reactjs.org/docs/error-decoder.html?invariant=423 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Wk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:50153)
+    at Vk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:44007)
+    at Uk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43928)
+    at Jk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:43768)
+    at Ok (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:39738)
+    at Hk (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:8:38562)
+    at kr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13171)
+    at MessagePort.Rr (https://assets.salesmap.kr/develop/build/client/b0df52e532d66c8990527e3152d26557922f34d5/assets/vendor-B6H03P9S.js:1:13583)
+[    2273ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://dev.salesmap.kr/callback/ai-sdr/proactive-nudge?code=019dba0a-ed45-7000-898d-d79fcb8ab5bc&pageUrl=https%3A%2F%2Fb2b.fastcampus.co.kr%2Fcontact:0
