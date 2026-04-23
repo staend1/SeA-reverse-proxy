@@ -79,9 +79,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Other non-HTML → redirect to original
+    // Other non-HTML (JSON, images, fonts, etc.) → proxy directly with CORS headers
+    // fetch/XHR from the iframe goes through here, so CORS must be open
     if (!contentType.includes("text/html")) {
-      return Response.redirect(fullUrl.toString(), 302);
+      const buf = await resp.arrayBuffer();
+      return new Response(buf, {
+        status: resp.status,
+        headers: {
+          "content-type": contentType || "application/octet-stream",
+          "access-control-allow-origin": "*",
+          "cache-control": resp.headers.get("cache-control") || "public, max-age=3600",
+        },
+      });
     }
 
     // HTML → strip frame-busting, remove original widgets, inject <base>
@@ -121,18 +130,24 @@ return u;
 };
 history.replaceState=function(s,t,u){try{_origReplaceState(s,t,u!=null?_safeUrl(u):u);}catch(e){}};
 history.pushState=function(s,t,u){try{_origPushState(s,t,u!=null?_safeUrl(u):u);}catch(e){}};
+// Route fetch/XHR through proxy (not directly to origin) to avoid CORS blocking
 var PROXY_ORIGIN=location.origin;
-var _toAbs=function(u){
+var PROXY_PREFIX=PROXY_ORIGIN+'/api/proxy?url=';
+var _toProxy=function(u){
 if(typeof u!=='string')return u;
-if(u.charAt(0)==='/'&&u.charAt(1)!=='/'){return ORIGIN+u;}
-if(u.startsWith(PROXY_ORIGIN+'/')){return ORIGIN+u.slice(PROXY_ORIGIN.length);}
-return u;
+if(u.indexOf('/api/proxy?url=')>=0)return u;
+var abs=null;
+if(u.charAt(0)==='/'&&u.charAt(1)!=='/'){abs=ORIGIN+u;}
+else if(u.startsWith(PROXY_ORIGIN+'/')){abs=ORIGIN+u.slice(PROXY_ORIGIN.length);}
+else if(u.startsWith(ORIGIN)){abs=u;}
+if(!abs)return u;
+return PROXY_PREFIX+encodeURIComponent(abs);
 };
 var _origFetch=window.fetch;
 window.fetch=function(resource,opts){
-if(typeof resource==='string'){resource=_toAbs(resource);}
+if(typeof resource==='string'){resource=_toProxy(resource);}
 else if(resource&&typeof resource==='object'&&resource.url){
-var u2=_toAbs(resource.url);
+var u2=_toProxy(resource.url);
 if(u2!==resource.url){resource=new Request(u2,resource);}
 }
 return _origFetch.call(this,resource,opts);
@@ -140,7 +155,7 @@ return _origFetch.call(this,resource,opts);
 var _origOpen=XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open=function(method,url){
 var args=Array.prototype.slice.call(arguments);
-args[1]=_toAbs(url);
+args[1]=_toProxy(url);
 return _origOpen.apply(this,args);
 };
 })();</script>`;
