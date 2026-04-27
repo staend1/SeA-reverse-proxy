@@ -10,6 +10,7 @@ export default function Home() {
     "019d8a93-e7e6-7bb5-99a2-b82dbcf21006"
   );
   const [widgetEnv, setWidgetEnv] = useState("dev");
+  const [proxyMode, setProxyMode] = useState<"default" | "compat">("default");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +18,7 @@ export default function Home() {
     let target = url.trim();
     if (!target.startsWith("http")) target = "https://" + target;
     router.push(
-      `/view?url=${encodeURIComponent(target)}&code=${encodeURIComponent(dataCode)}&env=${widgetEnv}`
+      `/view?url=${encodeURIComponent(target)}&code=${encodeURIComponent(dataCode)}&env=${widgetEnv}&mode=${proxyMode}`
     );
   };
 
@@ -56,6 +57,28 @@ export default function Home() {
                 }`}
               >
                 {env === "dev" ? "dev.salesmap.kr" : "salesmap.kr"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-zinc-400 mb-1">
+            프록시 모드
+          </label>
+          <div className="flex gap-2">
+            {(["default", "compat"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setProxyMode(m)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                  proxyMode === m
+                    ? "bg-violet-600 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                {m === "default" ? "기본" : "SPA 호환 (Wix 등)"}
               </button>
             ))}
           </div>
