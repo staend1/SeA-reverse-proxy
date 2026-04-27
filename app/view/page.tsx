@@ -11,7 +11,14 @@ function ViewInner() {
   const proxyMode = params.get("mode") === "compat" ? "compat" : "default";
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(targetUrl);
+  const [resetFlash, setResetFlash] = useState(false);
   const scriptInjected = useRef(false);
+
+  const handleReset = () => {
+    window.postMessage({ type: "sdr-reset", code: dataCode }, window.location.origin);
+    setResetFlash(true);
+    setTimeout(() => setResetFlash(false), 1500);
+  };
 
   // Track page URL for widget context
   useEffect(() => {
@@ -99,6 +106,13 @@ function ViewInner() {
         <div className="flex-1 bg-zinc-800 rounded px-3 py-1 text-sm text-zinc-400 truncate font-mono">
           {currentUrl}
         </div>
+        <button
+          onClick={handleReset}
+          className="text-xs px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition"
+          title="대화/넛지 상태를 초기화하고 새 방문자처럼 다시 시작"
+        >
+          {resetFlash ? "✓ 초기화됨" : "초기화"}
+        </button>
         <span
           className={`text-xs ${widgetLoaded ? "text-emerald-500" : "text-yellow-500"}`}
         >
