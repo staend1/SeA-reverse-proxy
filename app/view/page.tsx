@@ -111,7 +111,7 @@ function ViewInner() {
           className="text-xs px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition"
           title="대화/넛지 상태를 초기화하고 새 방문자처럼 다시 시작"
         >
-          {resetFlash ? "✓ 초기화됨" : "초기화"}
+          {resetFlash ? "✓ 초기화됨" : "대화 초기화"}
         </button>
         <span
           className={`text-xs ${widgetLoaded ? "text-emerald-500" : "text-yellow-500"}`}
