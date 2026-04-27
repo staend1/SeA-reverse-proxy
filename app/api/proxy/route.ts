@@ -57,6 +57,31 @@ export async function GET(request: NextRequest) {
         "(window.__sdrPageUrl||location.href)"
       );
 
+      // Strip cookies from all server requests so salesmap treats every page as a new visitor.
+      // Combined with the sdr-reset hook below, this lets the demo fire fresh nudges on demand.
+      js = js.split("credentials: 'include'").join("credentials: 'omit'");
+
+      // Reset hook: postMessage {type:'sdr-reset', code} to current window resets widget state.
+      // Injected inside the existing message listener so it shares the closure with all state vars.
+      js = js.replace(
+        "if (data.code && data.code !== code) return;",
+        `if (data.code && data.code !== code) return;
+        if (data.type === 'sdr-reset') {
+          conversationStartedEver = false;
+          nudgeFiredForPage = false;
+          nudgeSuppressedForPage = false;
+          lastUrl = null;
+          isOpen = false;
+          nudgePending = false;
+          if (nudgeFrame) { try { nudgeFrame.remove(); } catch (e) {} nudgeFrame = null; }
+          if (chatFrame) { chatFrame.style.display = 'none'; try { chatFrame.src = baseUrl; } catch (e) {} }
+          resetEngagedTime();
+          resetScrollDepth();
+          trackPageView();
+          return;
+        }`
+      );
+
       return new Response(locationPatch + js, {
         headers: {
           "content-type": "application/javascript; charset=utf-8",
