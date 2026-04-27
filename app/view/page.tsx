@@ -8,6 +8,7 @@ function ViewInner() {
   const targetUrl = params.get("url") || "";
   const dataCode = params.get("code") || "";
   const widgetEnv = params.get("env") || "dev";
+  const proxyMode = params.get("mode") === "compat" ? "compat" : "default";
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(targetUrl);
   const scriptInjected = useRef(false);
@@ -76,7 +77,17 @@ function ViewInner() {
     );
   }
 
-  const proxyUrl = `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+  const proxyUrl = (() => {
+    if (proxyMode === "compat") {
+      try {
+        const u = new URL(targetUrl);
+        return `/api/proxy/c/${encodeURIComponent(u.host)}${u.pathname}${u.search}${u.hash}`;
+      } catch {
+        return `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+      }
+    }
+    return `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+  })();
 
   return (
     <div className="w-screen h-screen flex flex-col">
