@@ -42,6 +42,18 @@ export async function GET(
 
     const contentType = resp.headers.get("content-type") || "";
 
+    // If upstream redirected to a different host (e.g. iocrops.com → www.iocrops.com),
+    // redirect the iframe to the new proxy URL so TARGET_HOST stays in sync with the actual host.
+    // Without this, the widget sends pageUrl with the wrong host (→ 403) and Wix's _api calls
+    // hit a different origin than what proxify() knows about (→ CORS).
+    try {
+      const respUrl = new URL(resp.url);
+      if (respUrl.host !== host && contentType.includes("text/html")) {
+        const newPath = `/api/proxy/c/${encodeURIComponent(respUrl.host)}${respUrl.pathname}${respUrl.search}`;
+        return Response.redirect(`${proxyOrigin}${newPath}`, 302);
+      }
+    } catch {}
+
     if (/\/sdr-widget[^/]*\.js$/.test(fullUrl.pathname)) {
       let js = await resp.text();
       js = js.replace(
