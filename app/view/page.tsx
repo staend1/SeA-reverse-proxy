@@ -11,13 +11,26 @@ function ViewInner() {
   const proxyMode = params.get("mode") === "compat" ? "compat" : "default";
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(targetUrl);
+  const [urlInput, setUrlInput] = useState(targetUrl);
   const [resetFlash, setResetFlash] = useState(false);
   const scriptInjected = useRef(false);
+
+  useEffect(() => {
+    setUrlInput(currentUrl);
+  }, [currentUrl]);
 
   const handleReset = () => {
     window.postMessage({ type: "sdr-reset", code: dataCode }, window.location.origin);
     setResetFlash(true);
     setTimeout(() => setResetFlash(false), 1500);
+  };
+
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    const normalized = trimmed.startsWith("http") ? trimmed : "https://" + trimmed;
+    window.location.href = `/view?url=${encodeURIComponent(normalized)}&code=${encodeURIComponent(dataCode)}&env=${widgetEnv}&mode=${proxyMode}`;
   };
 
   // Track page URL for widget context
@@ -103,9 +116,15 @@ function ViewInner() {
         <a href="/" className="text-zinc-500 hover:text-white text-sm">
           &larr;
         </a>
-        <div className="flex-1 bg-zinc-800 rounded px-3 py-1 text-sm text-zinc-400 truncate font-mono">
-          {currentUrl}
-        </div>
+        <form onSubmit={handleUrlSubmit} className="flex-1">
+          <input
+            type="text"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            spellCheck={false}
+            className="w-full bg-zinc-800 rounded px-3 py-1 text-sm text-zinc-300 font-mono focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+          />
+        </form>
         <button
           onClick={handleReset}
           className="text-xs px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition"

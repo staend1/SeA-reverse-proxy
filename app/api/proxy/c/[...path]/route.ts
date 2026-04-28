@@ -13,7 +13,12 @@ export async function GET(
 
   const host = decodeURIComponent(path[0]);
   const rest = path.slice(1).map(decodeURIComponent).join("/");
-  const search = request.nextUrl.search;
+  // Next.js catch-all routes inject the dynamic segment value as `?path=...`
+  // into nextUrl.search. Strip it so we don't forward it to upstream.
+  const cleanParams = new URLSearchParams(request.nextUrl.search);
+  cleanParams.delete("path");
+  const searchStr = cleanParams.toString();
+  const search = searchStr ? `?${searchStr}` : "";
   const targetOrigin = `https://${host}`;
   const targetUrl = `${targetOrigin}/${rest}${search}`;
 
