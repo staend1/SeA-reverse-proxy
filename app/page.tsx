@@ -1,7 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+type HistoryEntry = {
+  url: string;
+  code: string;
+  env: string;
+  mode: "default" | "compat";
+  ts: number;
+};
+
+const STORAGE_KEY = "sea-proxy-history";
+const MAX_HISTORY = 20;
+
+const normalizeUrl = (u: string) => {
+  const trimmed = u.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("http") ? trimmed : "https://" + trimmed;
+};
 
 export default function Home() {
   const router = useRouter();
@@ -11,16 +28,54 @@ export default function Home() {
   );
   const [widgetEnv, setWidgetEnv] = useState("dev");
   const [proxyMode, setProxyMode] = useState<"default" | "compat">("default");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setHistory(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    const normalized = normalizeUrl(newUrl);
+    const match = history.find((h) => h.url === normalized);
+    if (match) {
+      setDataCode(match.code);
+      setWidgetEnv(match.env);
+      setProxyMode(match.mode);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return;
-    let target = url.trim();
-    if (!target.startsWith("http")) target = "https://" + target;
+    const target = normalizeUrl(url);
+
+    const entry: HistoryEntry = {
+      url: target,
+      code: dataCode,
+      env: widgetEnv,
+      mode: proxyMode,
+      ts: Date.now(),
+    };
+    const filtered = history.filter(
+      (h) => !(h.url === entry.url && h.code === entry.code)
+    );
+    const next = [entry, ...filtered].slice(0, MAX_HISTORY);
+    setHistory(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+
     router.push(
       `/view?url=${encodeURIComponent(target)}&code=${encodeURIComponent(dataCode)}&env=${widgetEnv}&mode=${proxyMode}`
     );
   };
+
+  const uniqueUrls = Array.from(new Set(history.map((h) => h.url)));
+  const uniqueCodes = Array.from(new Set(history.map((h) => h.code)));
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
@@ -33,11 +88,17 @@ export default function Home() {
           </label>
           <input
             type="text"
+            list="url-history"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="example.com"
             className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 text-white placeholder:text-zinc-600 font-mono"
           />
+          <datalist id="url-history">
+            {uniqueUrls.map((u) => (
+              <option key={u} value={u} />
+            ))}
+          </datalist>
         </div>
 
         <div>
@@ -90,11 +151,17 @@ export default function Home() {
           </label>
           <input
             type="text"
+            list="code-history"
             value={dataCode}
             onChange={(e) => setDataCode(e.target.value)}
             placeholder="019cdd37-..."
             className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 text-white placeholder:text-zinc-600 font-mono text-sm"
           />
+          <datalist id="code-history">
+            {uniqueCodes.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </div>
 
         <button
