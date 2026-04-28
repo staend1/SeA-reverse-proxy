@@ -23,9 +23,7 @@ const normalizeUrl = (u: string) => {
 export default function Home() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [dataCode, setDataCode] = useState(
-    "019d8a93-e7e6-7bb5-99a2-b82dbcf21006"
-  );
+  const [dataCode, setDataCode] = useState("");
   const [widgetEnv, setWidgetEnv] = useState("dev");
   const [proxyMode, setProxyMode] = useState<"default" | "compat">("default");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
