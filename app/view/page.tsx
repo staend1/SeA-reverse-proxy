@@ -33,18 +33,31 @@ function ViewInner() {
     window.location.href = `/view?url=${encodeURIComponent(normalized)}&code=${encodeURIComponent(dataCode)}&env=${widgetEnv}&mode=${proxyMode}`;
   };
 
+  // prod salesmap API rejects pageUrl that isn't https (400 Validation failed).
+  // Widget uses __sdrPageUrl only as an opaque string (API arg, postMessage payload,
+  // tracking key) — never to fetch — so forcing https here is safe.
+  const toHttpsPageUrl = (raw: string): string => {
+    try {
+      const u = new URL(raw);
+      u.protocol = "https:";
+      return u.toString();
+    } catch {
+      return raw;
+    }
+  };
+
   // Track page URL for widget context
   useEffect(() => {
     if (!targetUrl) return;
     Object.defineProperty(window, "__sdrPageUrl", {
-      get: () => currentUrl,
+      get: () => toHttpsPageUrl(currentUrl),
       configurable: true,
     });
     const onMessage = (e: MessageEvent) => {
       if (e.data?.type === "proxy-navigation" && e.data.url) {
         setCurrentUrl(e.data.url);
         Object.defineProperty(window, "__sdrPageUrl", {
-          get: () => e.data.url,
+          get: () => toHttpsPageUrl(e.data.url),
           configurable: true,
         });
         // Trigger widget's replaceState hook so it detects page navigation
@@ -63,7 +76,7 @@ function ViewInner() {
 
     // Set __sdrPageUrl before widget loads
     Object.defineProperty(window, "__sdrPageUrl", {
-      get: () => currentUrl,
+      get: () => toHttpsPageUrl(currentUrl),
       configurable: true,
     });
 
