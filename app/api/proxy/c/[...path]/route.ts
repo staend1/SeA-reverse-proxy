@@ -2,6 +2,41 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
+// Some upstream hosts only serve HTTP (e.g. jireheng.co.kr — self-signed HTTPS
+// cert; HTTPS returns 406). Remember which protocol actually worked so resource
+// fetches after the first don't pay the failed-HTTPS retry cost.
+type Proto = "http" | "https";
+const PROTO_CACHE_KEY = "__seaProxyProtoCache";
+const protoCache: Map<string, Proto> =
+  ((globalThis as unknown as Record<string, unknown>)[PROTO_CACHE_KEY] as
+    | Map<string, Proto>
+    | undefined) ??
+  ((globalThis as unknown as Record<string, unknown>)[PROTO_CACHE_KEY] =
+    new Map());
+
+async function fetchWithProtocolFallback(
+  host: string,
+  pathAndSearch: string,
+  init: RequestInit
+): Promise<{ response: Response; protocol: Proto; finalUrl: string }> {
+  const cached = protoCache.get(host);
+  const order: Proto[] = cached
+    ? [cached, cached === "https" ? "http" : "https"]
+    : ["https", "http"];
+  let lastErr: unknown = null;
+  for (const proto of order) {
+    const url = `${proto}://${host}${pathAndSearch}`;
+    try {
+      const response = await fetch(url, init);
+      protoCache.set(host, proto);
+      return { response, protocol: proto, finalUrl: url };
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -19,31 +54,29 @@ export async function GET(
   cleanParams.delete("path");
   const searchStr = cleanParams.toString();
   const search = searchStr ? `?${searchStr}` : "";
-  const targetOrigin = `https://${host}`;
-  const targetUrl = `${targetOrigin}/${rest}${search}`;
-
-  let fullUrl: URL;
-  try {
-    fullUrl = new URL(targetUrl);
-  } catch {
-    return new Response("Invalid url", { status: 400 });
-  }
+  const pathAndSearch = `/${rest}${search}`;
 
   const proxyOrigin = `${request.nextUrl.protocol}//${request.nextUrl.host}`;
   const encodedHost = encodeURIComponent(host);
   const proxyPrefix = `/api/proxy/c/${encodedHost}`;
 
   try {
-    const resp = await fetch(fullUrl.toString(), {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
-      },
-      redirect: "follow",
-    });
+    const { response: resp, protocol, finalUrl } = await fetchWithProtocolFallback(
+      host,
+      pathAndSearch,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+        },
+        redirect: "follow",
+      }
+    );
+    const targetOrigin = `${protocol}://${host}`;
+    const fullUrl = new URL(finalUrl);
 
     const contentType = resp.headers.get("content-type") || "";
 
