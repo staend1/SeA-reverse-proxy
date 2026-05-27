@@ -17,6 +17,14 @@ export async function GET(request: NextRequest) {
 
   const origin = fullUrl.origin;
   const proxyOrigin = `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+  const encodedHost = encodeURIComponent(fullUrl.host);
+  // Route relative resources through the same-origin compat path. Without this,
+  // base href="http://..." causes Mixed Content blocks on HTTPS deployments
+  // (sea-reverse-proxy.vercel.app is HTTPS) and HTTPS-upgraded fetches fail on
+  // self-signed upstream certs (ERR_CERT_AUTHORITY_INVALID). The compat route
+  // already does HTTP fallback per host.
+  const compatBase = `${proxyOrigin}/api/proxy/c/${encodedHost}/`;
+  const compatPrefix = `${proxyOrigin}/api/proxy/c/${encodedHost}`;
 
   try {
     const resp = await fetch(fullUrl.toString(), {
@@ -158,9 +166,11 @@ history.pushState=function(s,t,u){try{_origPushState(s,t,u!=null?_safeUrl(u):u);
 // Route fetch/XHR through proxy (not directly to origin) to avoid CORS blocking
 var PROXY_ORIGIN=location.origin;
 var PROXY_PREFIX=PROXY_ORIGIN+'/api/proxy?url=';
+var COMPAT_PREFIX=${JSON.stringify(compatPrefix)};
 var _toProxy=function(u){
 if(typeof u!=='string')return u;
 if(u.indexOf('/api/proxy?url=')>=0)return u;
+if(u.indexOf(COMPAT_PREFIX)===0)return u;
 var abs=null;
 if(u.charAt(0)==='/'&&u.charAt(1)!=='/'){abs=ORIGIN+u;}
 else if(u.startsWith(PROXY_ORIGIN+'/')){abs=ORIGIN+u.slice(PROXY_ORIGIN.length);}
@@ -193,7 +203,7 @@ return _origOpen.apply(this,args);
       return match;
     });
     // Inject our script (AFTER removing ChannelIO scripts, since ours contains the keyword)
-    html = html.replace(/<head([^>]*)>/i, `<head$1>${injectedScripts}<base href="${origin}/">`);
+    html = html.replace(/<head([^>]*)>/i, `<head$1>${injectedScripts}<base href="${compatBase}">`);
     // Remove frame-busting patterns
     html = html.replace(
       /if\s*\(\s*(?:top|window\.top|parent)\s*!==?\s*(?:self|window\.self|window)\s*\)[^}]*}/gi,
