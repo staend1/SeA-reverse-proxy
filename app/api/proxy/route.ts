@@ -193,28 +193,6 @@ var args=Array.prototype.slice.call(arguments);
 args[1]=_toProxy(url);
 return _origOpen.apply(this,args);
 };
-// Next.js webpack chunk loader creates <script src="/_next/..."> at runtime.
-// HTML rewrite only catches the initial markup, so patch attribute setters too.
-var COMPAT_BASE='/api/proxy/c/${encodedHost}';
-function _rewriteRoot(v){
-if(typeof v!=='string')return v;
-if(v.charAt(0)!=='/'||v.charAt(1)==='/')return v;
-if(v.indexOf('/api/proxy')===0)return v;
-return COMPAT_BASE+v;
-}
-var _origSetAttr=Element.prototype.setAttribute;
-Element.prototype.setAttribute=function(name,value){
-if(name==='src'||name==='href'||name==='action'||name==='poster'){value=_rewriteRoot(value);}
-return _origSetAttr.call(this,name,value);
-};
-['HTMLScriptElement','HTMLImageElement','HTMLLinkElement','HTMLIFrameElement','HTMLSourceElement'].forEach(function(t){
-var proto=window[t]&&window[t].prototype;if(!proto)return;
-['src','href'].forEach(function(prop){
-var d=Object.getOwnPropertyDescriptor(proto,prop);
-if(!d||!d.set)return;
-try{Object.defineProperty(proto,prop,{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){d.set.call(this,_rewriteRoot(v));}});}catch(e){}
-});
-});
 })();</script>`;
 
     // Remove only ChannelTalk + SDR widget scripts (keep all other scripts for UI interactions)
@@ -224,14 +202,6 @@ try{Object.defineProperty(proto,prop,{configurable:true,enumerable:d.enumerable,
       if (/ChannelIO/i.test(body)) return "";
       return match;
     });
-    // Rewrite root-relative href/src/action so they hit the compat route instead
-    // of the proxy origin. `base href` only fixes RELATIVE paths — root-relative
-    // `/foo` always resolves against page origin, ignoring base's path. Without
-    // this, Next.js sites (e.g. data.vaiv.kr) 404 on every `/_next/static/...`.
-    html = html.replace(
-      /\b(href|src|action|poster)=(["'])\/(?!\/|api\/proxy\b)([^"'\s]*)\2/g,
-      `$1=$2/api/proxy/c/${encodedHost}/$3$2`
-    );
     // Inject our script (AFTER removing ChannelIO scripts, since ours contains the keyword)
     html = html.replace(/<head([^>]*)>/i, `<head$1>${injectedScripts}<base href="${compatBase}">`);
     // Remove frame-busting patterns
