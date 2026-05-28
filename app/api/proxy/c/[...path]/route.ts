@@ -162,6 +162,10 @@ if(u===TARGET_ORIGIN)return PROXY_FULL+'/';
 if(u.indexOf(TARGET_ORIGIN+'/')===0)return PROXY_FULL+u.slice(TARGET_ORIGIN.length);
 if(u.indexOf('//'+TARGET_HOST+'/')===0)return PROXY_FULL+u.slice(('//'+TARGET_HOST).length);
 if(u==='//'+TARGET_HOST)return PROXY_FULL+'/';
+// Page-origin absolute URL — e.g. webpack runtime builds chunk URLs as
+// location.origin + '/_next/...' after we strip the proxy prefix from
+// location.pathname. Route those through compat too.
+if(u.indexOf(PROXY_ORIGIN+'/')===0)return PROXY_FULL+u.slice(PROXY_ORIGIN.length);
 if(u.charAt(0)==='/'&&u.charAt(1)!=='/'){
 if(u.indexOf(PROXY_PREFIX+'/')===0||u===PROXY_PREFIX)return u;
 if(u.indexOf('/api/proxy')===0)return u;
@@ -239,7 +243,12 @@ document.querySelectorAll('#ch-plugin,[id^="ch-plugin"],iframe[src*="channel.io"
 }).observe(document.documentElement,{childList:true,subtree:true});
 try{
 var subPath=location.pathname.indexOf(PROXY_PREFIX)===0?location.pathname.slice(PROXY_PREFIX.length):'/';
-parent.postMessage({type:'proxy-navigation',url:TARGET_ORIGIN+(subPath||'/')+location.search+location.hash},'*');
+if(!subPath)subPath='/';
+// Strip the proxy prefix from location.pathname so client routers (Next.js etc.)
+// see the same path the SSR rendered against. Without this, Next.js router
+// throws "invariant: invalid relative URL" on hydration and aborts mount.
+history.replaceState(history.state,'',subPath+location.search+location.hash);
+parent.postMessage({type:'proxy-navigation',url:TARGET_ORIGIN+subPath+location.search+location.hash},'*');
 }catch(e){}
 document.addEventListener('click',function(e){
 var a=e.target&&e.target.closest&&e.target.closest('a');
@@ -247,12 +256,42 @@ if(!a||!a.href)return;
 var raw=a.getAttribute('href')||'';
 if(raw.charAt(0)==='#')return;
 var pu=proxify(a.href);
-if(pu!==a.href){
+// Always intercept proxy-origin navigations — without this, Next.js Link's
+// onClick reaches the client router with our rewritten path and throws
+// "invariant: invalid relative URL".
+if(pu!==a.href||a.href.indexOf(PROXY_FULL)===0){
 e.preventDefault();
 e.stopImmediatePropagation();
 location.assign(pu);
 }
 },true);
+function proxifySrcset(s){
+if(typeof s!=='string')return s;
+return s.split(',').map(function(p){
+var t=p.trim();var i=t.search(/\\s/);
+if(i===-1)return proxify(t);
+return proxify(t.slice(0,i))+t.slice(i);
+}).join(', ');
+}
+// Patch attribute setters so dynamically created <script src="/_next/..."> etc.
+// also get routed through the proxy (initial HTML rewrite alone misses these).
+var _origSetAttr=Element.prototype.setAttribute;
+Element.prototype.setAttribute=function(name,value){
+var n=typeof name==='string'?name.toLowerCase():name;
+if(n==='srcset'){value=proxifySrcset(value);}
+else if((n==='src'||n==='href'||n==='action'||n==='poster')&&typeof value==='string'){value=proxify(value);}
+return _origSetAttr.call(this,name,value);
+};
+['HTMLScriptElement','HTMLImageElement','HTMLLinkElement','HTMLIFrameElement','HTMLSourceElement'].forEach(function(t){
+var proto=window[t]&&window[t].prototype;if(!proto)return;
+['src','href'].forEach(function(prop){
+var d=Object.getOwnPropertyDescriptor(proto,prop);
+if(!d||!d.set)return;
+try{Object.defineProperty(proto,prop,{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){d.set.call(this,proxify(v));}});}catch(e){}
+});
+var ds=Object.getOwnPropertyDescriptor(proto,'srcset');
+if(ds&&ds.set){try{Object.defineProperty(proto,'srcset',{configurable:true,enumerable:ds.enumerable,get:ds.get,set:function(v){ds.set.call(this,proxifySrcset(v));}});}catch(e){}}
+});
 })();</script>`;
 
     html = html.replace(/<script[^>]*sdr-widget[^"']*\.js[^>]*><\/script>/gi, "");
@@ -261,6 +300,38 @@ location.assign(pu);
       if (/ChannelIO/i.test(body)) return "";
       return match;
     });
+    // Rewrite root-relative URLs in static HTML — `<base>` only fixes RELATIVE
+    // paths, root-relative `/foo` resolves against page origin and 404s.
+    // Case-insensitive because React emits srcSet (camelCase) verbatim.
+    html = html.replace(
+      /\b(href|src|action|poster)=(["'])\/(?!\/|api\/proxy\b)([^"'\s]*)\2/gi,
+      `$1=$2${proxyPrefix}/$3$2`
+    );
+    // srcset is "url 1x, url 2x" — rewrite each root-relative URL inside.
+    // browsers pick from srcset (not src) when present, so missing this breaks images.
+    html = html.replace(
+      /\bsrcset=(["'])([^"']*)\1/gi,
+      (_m, q, val) => {
+        const out = val
+          .split(",")
+          .map((part: string) => {
+            const t = part.trim();
+            const i = t.search(/\s/);
+            const url = i === -1 ? t : t.slice(0, i);
+            const rest = i === -1 ? "" : t.slice(i);
+            if (
+              url.startsWith("/") &&
+              !url.startsWith("//") &&
+              !url.startsWith("/api/proxy")
+            ) {
+              return `${proxyPrefix}${url}${rest}`;
+            }
+            return t;
+          })
+          .join(", ");
+        return `srcset=${q}${out}${q}`;
+      }
+    );
     html = html.replace(
       /<head([^>]*)>/i,
       `<head$1>${injectedScripts}<base href="${proxyOrigin}${proxyPrefix}/">`
