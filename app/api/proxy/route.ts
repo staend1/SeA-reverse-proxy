@@ -17,14 +17,6 @@ export async function GET(request: NextRequest) {
 
   const origin = fullUrl.origin;
   const proxyOrigin = `${request.nextUrl.protocol}//${request.nextUrl.host}`;
-  const encodedHost = encodeURIComponent(fullUrl.host);
-  // Route relative resources through the same-origin compat path. Without this,
-  // base href="http://..." causes Mixed Content blocks on HTTPS deployments
-  // (sea-reverse-proxy.vercel.app is HTTPS) and HTTPS-upgraded fetches fail on
-  // self-signed upstream certs (ERR_CERT_AUTHORITY_INVALID). The compat route
-  // already does HTTP fallback per host.
-  const compatBase = `${proxyOrigin}/api/proxy/c/${encodedHost}/`;
-  const compatPrefix = `${proxyOrigin}/api/proxy/c/${encodedHost}`;
 
   try {
     const resp = await fetch(fullUrl.toString(), {
@@ -166,11 +158,9 @@ history.pushState=function(s,t,u){try{_origPushState(s,t,u!=null?_safeUrl(u):u);
 // Route fetch/XHR through proxy (not directly to origin) to avoid CORS blocking
 var PROXY_ORIGIN=location.origin;
 var PROXY_PREFIX=PROXY_ORIGIN+'/api/proxy?url=';
-var COMPAT_PREFIX=${JSON.stringify(compatPrefix)};
 var _toProxy=function(u){
 if(typeof u!=='string')return u;
 if(u.indexOf('/api/proxy?url=')>=0)return u;
-if(u.indexOf(COMPAT_PREFIX)===0)return u;
 var abs=null;
 if(u.charAt(0)==='/'&&u.charAt(1)!=='/'){abs=ORIGIN+u;}
 else if(u.startsWith(PROXY_ORIGIN+'/')){abs=ORIGIN+u.slice(PROXY_ORIGIN.length);}
@@ -193,28 +183,6 @@ var args=Array.prototype.slice.call(arguments);
 args[1]=_toProxy(url);
 return _origOpen.apply(this,args);
 };
-// Next.js webpack chunk loader creates <script src="/_next/..."> at runtime.
-// HTML rewrite only catches the initial markup, so patch attribute setters too.
-var COMPAT_BASE='/api/proxy/c/${encodedHost}';
-function _rewriteRoot(v){
-if(typeof v!=='string')return v;
-if(v.charAt(0)!=='/'||v.charAt(1)==='/')return v;
-if(v.indexOf('/api/proxy')===0)return v;
-return COMPAT_BASE+v;
-}
-var _origSetAttr=Element.prototype.setAttribute;
-Element.prototype.setAttribute=function(name,value){
-if(name==='src'||name==='href'||name==='action'||name==='poster'){value=_rewriteRoot(value);}
-return _origSetAttr.call(this,name,value);
-};
-['HTMLScriptElement','HTMLImageElement','HTMLLinkElement','HTMLIFrameElement','HTMLSourceElement'].forEach(function(t){
-var proto=window[t]&&window[t].prototype;if(!proto)return;
-['src','href'].forEach(function(prop){
-var d=Object.getOwnPropertyDescriptor(proto,prop);
-if(!d||!d.set)return;
-try{Object.defineProperty(proto,prop,{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){d.set.call(this,_rewriteRoot(v));}});}catch(e){}
-});
-});
 })();</script>`;
 
     // Remove only ChannelTalk + SDR widget scripts (keep all other scripts for UI interactions)
@@ -224,16 +192,8 @@ try{Object.defineProperty(proto,prop,{configurable:true,enumerable:d.enumerable,
       if (/ChannelIO/i.test(body)) return "";
       return match;
     });
-    // Rewrite root-relative href/src/action so they hit the compat route instead
-    // of the proxy origin. `base href` only fixes RELATIVE paths — root-relative
-    // `/foo` always resolves against page origin, ignoring base's path. Without
-    // this, Next.js sites (e.g. data.vaiv.kr) 404 on every `/_next/static/...`.
-    html = html.replace(
-      /\b(href|src|action|poster)=(["'])\/(?!\/|api\/proxy\b)([^"'\s]*)\2/g,
-      `$1=$2/api/proxy/c/${encodedHost}/$3$2`
-    );
     // Inject our script (AFTER removing ChannelIO scripts, since ours contains the keyword)
-    html = html.replace(/<head([^>]*)>/i, `<head$1>${injectedScripts}<base href="${compatBase}">`);
+    html = html.replace(/<head([^>]*)>/i, `<head$1>${injectedScripts}<base href="${origin}/">`);
     // Remove frame-busting patterns
     html = html.replace(
       /if\s*\(\s*(?:top|window\.top|parent)\s*!==?\s*(?:self|window\.self|window)\s*\)[^}]*}/gi,
