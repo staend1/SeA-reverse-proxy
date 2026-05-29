@@ -51,10 +51,21 @@ export async function GET(request: NextRequest) {
   if (typeof window.__sdrPageUrl !== 'string') {
     window.__sdrPageUrl = window.location.href;
   }
+  // Proxied page path: the widget keys nudge re-fire off location.pathname,
+  // but the top window pathname is always /view. Derive it from __sdrPageUrl so
+  // navigating between proxied pages is detected as a real page change.
+  window.__sdrPath = function(){
+    try { return new URL(window.__sdrPageUrl, window.location.href).pathname; }
+    catch(e){ return window.location.pathname; }
+  };
 })();\n`;
       js = js.replace(
         /location\.href/g,
         "(window.__sdrPageUrl||location.href)"
+      );
+      js = js.replace(
+        /location\.pathname/g,
+        "(window.__sdrPath?window.__sdrPath():location.pathname)"
       );
 
       // Strip cookies from all server requests so salesmap treats every page as a new visitor.
