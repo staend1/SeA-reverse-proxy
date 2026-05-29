@@ -126,9 +126,14 @@ function ViewInner() {
     <div className="w-screen h-screen flex flex-col">
       {/* Top bar */}
       <div className="h-10 bg-zinc-900 border-b border-zinc-800 flex items-center px-4 gap-3 shrink-0">
-        <a href="/" className="text-zinc-500 hover:text-white text-sm">
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="text-zinc-500 hover:text-white text-sm px-1"
+          title="사이트 안에서 이전 페이지로"
+        >
           &larr;
-        </a>
+        </button>
         <form onSubmit={handleUrlSubmit} className="flex-1">
           <input
             type="text"

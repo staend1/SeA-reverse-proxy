@@ -126,8 +126,18 @@ export async function GET(request: NextRequest) {
     const injectedScripts = `<script data-proxy="1">(function(){
 var ORIGIN='${origin}';
 var PROXY=location.origin+'/api/proxy?url=';
-var targetUrl=new URLSearchParams(location.search).get('url')||ORIGIN;
-try{var t=new URL(targetUrl);history.replaceState({},'',t.pathname+t.search+t.hash)}catch(e){}
+var targetUrl=${JSON.stringify(fullUrl.toString())};
+// Tag the normalized (clean-path) URL with the origin so back/forward reloads
+// re-proxy via middleware instead of hitting our own Next.js app at that bare path.
+var _mark=function(path){
+try{
+if(path.indexOf('__pxorigin=')>=0)return path;
+var hash='';var hi=path.indexOf('#');if(hi>=0){hash=path.slice(hi);path=path.slice(0,hi);}
+var sep=path.indexOf('?')>=0?'&':'?';
+return path+sep+'__pxorigin='+encodeURIComponent(ORIGIN)+hash;
+}catch(e){return path;}
+};
+try{var t=new URL(targetUrl);history.replaceState({},'',_mark(t.pathname+t.search+t.hash))}catch(e){}
 try{parent.postMessage({type:'proxy-navigation',url:targetUrl},'*')}catch(e){}
 var noop=function(){};noop.q=[];noop.c=noop;window.ChannelIO=noop;window.ChannelIOInitialized=true;
 new MutationObserver(function(){
@@ -150,7 +160,7 @@ location.assign(PROXY+encodeURIComponent(h));
 var _origReplaceState=history.replaceState.bind(history);
 var _origPushState=history.pushState.bind(history);
 var _safeUrl=function(u){
-try{var p=new URL(u);if(p.origin!==location.origin){return p.pathname+p.search+p.hash;}}catch(e){}
+try{var p=new URL(u,location.href);return _mark(p.pathname+p.search+p.hash);}catch(e){}
 return u;
 };
 history.replaceState=function(s,t,u){try{_origReplaceState(s,t,u!=null?_safeUrl(u):u);}catch(e){}};
