@@ -8,7 +8,9 @@ function ViewInner() {
   const targetUrl = params.get("url") || "";
   const dataCode = params.get("code") || "";
   const widgetEnv = params.get("env") || "dev";
-  const proxyMode = params.get("mode") === "compat" ? "compat" : "default";
+  const rawMode = params.get("mode");
+  const proxyMode =
+    rawMode === "compat" ? "compat" : rawMode === "auto" ? "auto" : "default";
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(targetUrl);
   const [urlInput, setUrlInput] = useState(targetUrl);
@@ -142,10 +144,11 @@ function ViewInner() {
   }
 
   const proxyUrl = (() => {
-    if (proxyMode === "compat") {
+    if (proxyMode === "compat" || proxyMode === "auto") {
+      const prefix = proxyMode === "auto" ? "a" : "c";
       try {
         const u = new URL(targetUrl);
-        return `/api/proxy/c/${encodeURIComponent(u.host)}${u.pathname}${u.search}${u.hash}`;
+        return `/api/proxy/${prefix}/${encodeURIComponent(u.host)}${u.pathname}${u.search}${u.hash}`;
       } catch {
         return `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
       }

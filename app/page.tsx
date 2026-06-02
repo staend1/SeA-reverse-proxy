@@ -27,6 +27,59 @@ export default function Home() {
   const [widgetEnv, setWidgetEnv] = useState("dev");
   const [proxyMode, setProxyMode] = useState<"default" | "compat">("default");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  // True when this home page is rendering INSIDE the demo iframe due to an auto-mode
+  // escape — we then hide our own UI/title so the proxied frame never shows our branding.
+  // Computed synchronously on the client's first render (before paint) so the branded
+  // form/title never flashes; document.title is blanked here too because Next's static
+  // <title> metadata would otherwise win over a useEffect-only clear.
+  const [autoEscape, setAutoEscape] = useState<boolean>(() => {
+    if (typeof window === "undefined" || window.self === window.top) return false;
+    try {
+      if (!sessionStorage.getItem("__seaAutoHost")) return false;
+    } catch {
+      return false;
+    }
+    try { document.title = ""; } catch {}
+    return true;
+  });
+
+  // AUTO escape recovery for the root path. A proxied site can hard-navigate the iframe
+  // to bare "/" (e.g. its SPA router redirects to its own home after we normalized the URL
+  // to "/"), landing on THIS page inside the iframe → looks like our app. not-found.tsx
+  // can't catch "/" (it's a real route), so recover here: only when we're inside an iframe
+  // (the demo's proxied frame) and the auto marker is set. A top-window visitor to "/" has
+  // window.self === window.top, so the real home UI is untouched.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.self === window.top) return;
+    let host: string | null = null;
+    try {
+      host = sessionStorage.getItem("__seaAutoHost");
+    } catch {}
+    if (!host) return;
+    const { pathname, search, hash } = window.location;
+    if (pathname.startsWith("/api/") || pathname.startsWith("/view")) return;
+    // Inside the demo iframe with the auto marker: never show our branded home UI.
+    setAutoEscape(true);
+    try { document.title = ""; } catch {}
+    // Guard scoped to host:path — a bare pathname would mis-trigger across different
+    // proxied sites in the same session (sessionStorage persists between navigations).
+    const guardKey = "__seaAutoRecover";
+    const guardVal = host + ":" + pathname;
+    let prev = "";
+    try {
+      prev = sessionStorage.getItem(guardKey) || "";
+    } catch {}
+    if (prev === guardVal) {
+      // Loop: the proxied page keeps re-escaping (hard Next.js App Router case). Stop
+      // bouncing and leave a neutral blank — NOT our 404/home — so it's never a regression.
+      try { sessionStorage.removeItem(guardKey); } catch {}
+      return;
+    }
+    try { sessionStorage.setItem(guardKey, guardVal); } catch {}
+    window.location.replace(
+      `/api/proxy/a/${encodeURIComponent(host)}${pathname}${search}${hash}`
+    );
+  }, []);
 
   useEffect(() => {
     try {
@@ -74,6 +127,12 @@ export default function Home() {
 
   const uniqueUrls = Array.from(new Set(history.map((h) => h.url)));
   const uniqueCodes = Array.from(new Set(history.map((h) => h.code)));
+
+  // Inside the demo iframe after an auto-mode escape: render a neutral blank instead of
+  // our branded home, so the proxied frame never displays our app's UI/404.
+  if (autoEscape) {
+    return <div className="min-h-screen bg-white" />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
