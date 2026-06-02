@@ -14,13 +14,44 @@ function ViewInner() {
   const [urlInput, setUrlInput] = useState(targetUrl);
   const [resetFlash, setResetFlash] = useState(false);
   const scriptInjected = useRef(false);
+  const resetChannel = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
     setUrlInput(currentUrl);
   }, [currentUrl]);
 
-  const handleReset = () => {
+  // Reset the widget that lives in THIS window only.
+  const resetLocalWidget = () => {
     window.postMessage({ type: "sdr-reset", code: dataCode }, window.location.origin);
+  };
+
+  // The conversation state lives in the salesmap.kr chat iframe, whose storage is
+  // shared across every proxy tab on the same origin. Resetting one window reloads
+  // its own iframe, but any other open tab with the same code re-syncs the old
+  // conversation back. So fan the reset out to all tabs (same code) via a
+  // BroadcastChannel and reload every chat iframe at once — leaving no live tab
+  // to restore the conversation.
+  useEffect(() => {
+    if (!dataCode || typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel(`sdr-reset-${dataCode}`);
+    ch.onmessage = (e) => {
+      if (e.data?.type === "sdr-reset" && e.data.code === dataCode) {
+        resetLocalWidget();
+      }
+    };
+    resetChannel.current = ch;
+    return () => {
+      ch.close();
+      resetChannel.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataCode]);
+
+  const handleReset = () => {
+    // Reset this tab immediately (BroadcastChannel never echoes to the sender)…
+    resetLocalWidget();
+    // …and tell every other proxy tab with the same code to reset simultaneously.
+    resetChannel.current?.postMessage({ type: "sdr-reset", code: dataCode });
     setResetFlash(true);
     setTimeout(() => setResetFlash(false), 1500);
   };
