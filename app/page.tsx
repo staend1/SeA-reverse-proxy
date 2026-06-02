@@ -24,9 +24,9 @@ export default function Home() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [dataCode, setDataCode] = useState("");
-  const [widgetEnv, setWidgetEnv] = useState("dev");
+  const [widgetEnv, setWidgetEnv] = useState("prod");
   const [proxyMode, setProxyMode] = useState<"default" | "compat" | "auto">(
-    "default"
+    "auto"
   );
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   // True when this home page is rendering INSIDE the demo iframe due to an auto-mode
