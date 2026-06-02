@@ -7,7 +7,7 @@ type HistoryEntry = {
   url: string;
   code: string;
   env: string;
-  mode: "default" | "compat";
+  mode: "default" | "compat" | "auto";
   ts: number;
 };
 
@@ -25,7 +25,9 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [dataCode, setDataCode] = useState("");
   const [widgetEnv, setWidgetEnv] = useState("dev");
-  const [proxyMode, setProxyMode] = useState<"default" | "compat">("default");
+  const [proxyMode, setProxyMode] = useState<"default" | "compat" | "auto">(
+    "default"
+  );
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   // True when this home page is rendering INSIDE the demo iframe due to an auto-mode
   // escape — we then hide our own UI/title so the proxied frame never shows our branding.
@@ -185,7 +187,7 @@ export default function Home() {
             프록시 모드
           </label>
           <div className="flex gap-2">
-            {(["default", "compat"] as const).map((m) => (
+            {(["default", "compat", "auto"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -196,7 +198,11 @@ export default function Home() {
                     : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                 }`}
               >
-                {m === "default" ? "기본" : "SPA 호환 (Wix 등)"}
+                {m === "default"
+                  ? "기본"
+                  : m === "compat"
+                    ? "SPA 호환 (Wix 등)"
+                    : "auto"}
               </button>
             ))}
           </div>
