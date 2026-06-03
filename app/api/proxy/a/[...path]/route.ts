@@ -1,11 +1,34 @@
 import { NextRequest } from "next/server";
+import { Agent, fetch as undiciFetch } from "undici";
 
-export const runtime = "edge";
+// nodejs 런타임 필수: edge fetch는 TLS cert 검증을 우회할 수 없다. 일부 사이트
+// (spidercore.io, bigtech.co.kr 등)는 intermediate CA를 안 보내 undici가
+// UNABLE_TO_VERIFY_LEAF_SIGNATURE로 연결 실패(curl/브라우저는 AIA/시스템 CA로 보완).
+// 아래 tlsFetch가 cert 실패 시에만 검증을 완화해 재시도한다. default/compat은 무변경.
+export const runtime = "nodejs";
 
 // === auto mode ===
 // compat 라우트를 베이스로 한 "보강 누적" 모드. default/compat은 건드리지 않고
 // auto 라우트에만 추가 처리를 쌓아 가장 강력한 호환 모드로 운영한다.
 // 경로 prefix는 /api/proxy/a/{encodedHost}/...
+
+// cert 검증을 끈 dispatcher — 정상 사이트는 절대 타지 않고, 일반 fetch가
+// cert 에러로 throw할 때만 폴백으로 사용한다(데모 프록시: 공개 마케팅 사이트만 fetch).
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
+
+// 일반 fetch 우선 → cert/연결 실패 시 검증 완화 dispatcher로 1회 재시도.
+// 폴백은 undici fetch를 직접 호출(Next가 래핑한 global fetch는 dispatcher 옵션을 무시함).
+async function tlsFetch(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (e) {
+    const r = await undiciFetch(url, {
+      ...(init as Record<string, unknown>),
+      dispatcher: insecureAgent,
+    });
+    return r as unknown as Response;
+  }
+}
 
 type Proto = "http" | "https";
 const PROTO_CACHE_KEY = "__seaProxyAutoProtoCache";
@@ -29,13 +52,13 @@ async function fetchWithProtocolFallback(
   for (const proto of order) {
     const url = `${proto}://${host}${pathAndSearch}`;
     try {
-      let response = await fetch(url, init);
+      let response = await tlsFetch(url, init);
       // Some CDNs (e.g. static.wixstatic.com) intermittently 403/429 a burst of
       // edge-runtime fetches (bot/fingerprint heuristics). A single retry usually
       // clears the transient block.
       if (response.status === 403 || response.status === 429 || response.status === 503) {
         try {
-          const retry = await fetch(url, init);
+          const retry = await tlsFetch(url, init);
           if (retry.ok) response = retry;
         } catch {}
       }
