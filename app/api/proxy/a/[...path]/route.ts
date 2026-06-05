@@ -49,6 +49,14 @@ async function fetchWithProtocolFallback(
     ? [cached, cached === "https" ? "http" : "https"]
     : ["https", "http"];
   let lastErr: unknown = null;
+  // A connection that "succeeds" can still be the wrong protocol: e.g. an HTTP-only
+  // site whose https vhost answers 406/4xx — reachable only via the insecure-cert
+  // tlsFetch fallback (jireheng: https→406, http→200). Before that fallback existed,
+  // the https attempt THREW (cert error) and we naturally tried http; now it returns
+  // a Response, so an error status must also trigger the other protocol. Keep the
+  // first error response as a candidate in case both protocols fail.
+  let badCandidate: { response: Response; protocol: Proto; finalUrl: string } | null =
+    null;
   for (const proto of order) {
     const url = `${proto}://${host}${pathAndSearch}`;
     try {
@@ -62,16 +70,44 @@ async function fetchWithProtocolFallback(
           if (retry.ok) response = retry;
         } catch {}
       }
+      if (response.status >= 400) {
+        // Keep only the FIRST error response (preferred protocol order) — if the
+        // second protocol also errors we must not return/cache the second one
+        // (e.g. asset 404 on http must win over the https vhost's blanket 406).
+        if (!badCandidate) badCandidate = { response, protocol: proto, finalUrl: url };
+        continue;
+      }
       protoCache.set(host, proto);
       return { response, protocol: proto, finalUrl: url };
     } catch (e) {
       lastErr = e;
     }
   }
+  if (badCandidate) {
+    protoCache.set(host, badCandidate.protocol);
+    return badCandidate;
+  }
   throw lastErr;
 }
 
 export async function GET(
+  request: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  return handleProxy(request, ctx);
+}
+
+// Sites XHR-POST to their own endpoints (e.g. unipromotion's module/site/site.php
+// for menu/session state). Without a POST handler Next answers 405 and the site's
+// init JS breaks. Forward method + body + content-type through the same pipeline.
+export async function POST(
+  request: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  return handleProxy(request, ctx);
+}
+
+async function handleProxy(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
@@ -194,22 +230,40 @@ export async function GET(
       .join(", ");
   // url(...) in CSS is images/fonts → asset rewriter (cross-origin allowed, fixes CORS fonts).
   // Relative url() is left alone — it resolves against the CSS file's own proxied URL.
+  // LESS interpolation (url(@{var}/x)) is left untouched — rewriting would corrupt the
+  // variable reference before client-side less.js compiles it.
   const rewriteCssUrls = (css: string): string =>
-    css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/gi, (_m, q, u) => `url(${q}${toProxyAsset(u)}${q})`);
+    css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/gi, (m, q, u) =>
+      (u as string).includes("@{") ? m : `url(${q}${toProxyAsset(u)}${q})`);
 
   try {
+    // POST: buffer the body up-front so the protocol-fallback can re-send it on a
+    // second attempt (a consumed stream can't be replayed). Forward content-type
+    // so form/JSON bodies parse upstream.
+    const method = request.method === "POST" ? "POST" : "GET";
+    const fetchHeaders: Record<string, string> = {
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+    };
+    let bodyBuf: ArrayBuffer | undefined;
+    if (method === "POST") {
+      bodyBuf = await request.arrayBuffer();
+      const ct = request.headers.get("content-type");
+      if (ct) fetchHeaders["Content-Type"] = ct;
+      const xrw = request.headers.get("x-requested-with");
+      if (xrw) fetchHeaders["X-Requested-With"] = xrw;
+    }
     const { response: resp, protocol, finalUrl } = await fetchWithProtocolFallback(
       host,
       pathAndSearch,
       {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
-        },
+        method,
+        headers: fetchHeaders,
         redirect: "follow",
+        ...(bodyBuf !== undefined ? { body: bodyBuf } : {}),
       }
     );
     const targetOrigin = `${protocol}://${host}`;
@@ -269,6 +323,23 @@ export async function GET(
       });
     }
 
+    // .less stylesheets compiled client-side by less.js (e.g. unipromotion). Upstream
+    // often mislabels them text/html — without this branch they'd fall into the HTML
+    // path, get the inject script + <base> prepended, and less.js would fail to compile
+    // (silently dropping the site's entire generated layout CSS). Serve the raw source
+    // with url() rewriting; less.js fetches via XHR and ignores content-type.
+    if (/\.less$/i.test(fullUrl.pathname)) {
+      const body = await resp.text();
+      return new Response(rewriteCssUrls(body), {
+        status: resp.status,
+        headers: {
+          "content-type": "text/css; charset=utf-8",
+          "access-control-allow-origin": "*",
+          "cache-control": "no-cache",
+        },
+      });
+    }
+
     if (contentType.includes("javascript") || contentType.includes("text/css")) {
       let body = await resp.text();
       if (contentType.includes("text/css")) body = rewriteCssUrls(body);
@@ -296,6 +367,19 @@ export async function GET(
     }
 
     let html = await resp.text();
+
+    // Distinguish real DOCUMENT loads (top/iframe navigation) from XHR/fetch/etc that
+    // happen to return text/html — via the browser's sec-fetch-dest header. Injecting
+    // <head><script>+<base> into a non-document breaks consumers: less.js gets our
+    // inject prepended to a .less mislabeled as text/html (compile error → site-wide
+    // layout CSS lost), HTML fragments get a rogue <base>. Non-documents still get the
+    // URL rewrites (fragments are inserted into the proxied DOM and need proxied URLs)
+    // but no script/base injection, and keep the upstream status code.
+    // No header (server-side tools, old browsers) → treat as document (old behavior).
+    const fetchDest = request.headers.get("sec-fetch-dest");
+    const isDocument =
+      !fetchDest ||
+      ["document", "iframe", "frame", "embed", "object"].includes(fetchDest);
 
     const injectedScripts = `<script data-proxy-auto="1">(function(){
 var TARGET_ORIGIN=${JSON.stringify(targetOrigin)};
@@ -354,6 +438,13 @@ return u;
 // proxy instead of escaping the iframe. NOT used for fetch/XHR (those keep direct CORS).
 function proxifyNav(u){
 if(typeof u!=='string'||!u)return u;
+// Already-proxied URLs (server rewrites <a href> to /api/proxy/a/... so a.href
+// resolves to PROXY_ORIGIN/api/proxy/...) must pass through UNTOUCHED — proxify()
+// returns them unchanged, and without this guard the cross-origin branch below
+// would see the proxy origin as a foreign host and double-wrap:
+// /api/proxy/a/localhost/api/proxy/a/site/... (404/502 inside our own app).
+if(u.indexOf('/api/proxy')===0)return u;
+if(u.indexOf(PROXY_ORIGIN+'/api/proxy')===0)return u;
 var p=proxify(u);
 if(p!==u)return p;
 var m=u.match(/^https?:\\/\\/([^\\/?#]+)([\\/?#][\\s\\S]*|)$/i);
@@ -424,6 +515,11 @@ var args=Array.prototype.slice.call(arguments);
 args[1]=proxify(url);
 return _origOpen.apply(this,args);
 };
+// ServiceWorker registration can't work through the proxy: the SW script URL resolves
+// against our bare origin (404) and even proxied its scope wouldn't match. Sites
+// (e.g. inupt's cafe24 sw.php) log a console TypeError on the failed registration.
+// Return a forever-pending promise: no error, no unhandled rejection, demo needs no SW.
+try{if(navigator.serviceWorker&&navigator.serviceWorker.register){navigator.serviceWorker.register=function(){return new Promise(function(){});};}}catch(e){}
 var noop=function(){};noop.q=[];noop.c=noop;window.ChannelIO=noop;window.ChannelIOInitialized=true;
 new MutationObserver(function(){
 document.querySelectorAll('#ch-plugin,[id^="ch-plugin"],iframe[src*="channel.io"],[class*="ch-desk"],[id*="channel"]').forEach(function(el){el.remove()});
@@ -559,37 +655,55 @@ if(ds&&ds.set){try{Object.defineProperty(proto,'srcset',{configurable:true,enume
     );
     // Inline style="...url(...)..." and <style> blocks reference images/fonts too.
     html = html.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (_m, attrs, css) => `<style${attrs}>${rewriteCssUrls(css)}</style>`);
+    // style ATTRIBUTES with url(...) — e.g. unipromotion's hero
+    // style="background: url(&quot;/img/x.jpg&quot;) ...". CSS in a style attribute
+    // resolves root-relative urls against the page ORIGIN (ignores <base> path), so
+    // /img/x lands on our bare origin → 404. Attribute values are HTML-escaped:
+    // unescape quotes for the css rewriter, re-escape after.
+    const rewriteStyleAttr = (css: string): string => {
+      const unescaped = css
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&apos;/g, "'");
+      return rewriteCssUrls(unescaped)
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    };
+    html = html.replace(/\bstyle="([^"]*url\([^"]*)"/gi, (_m, css) => `style="${rewriteStyleAttr(css)}"`);
+    html = html.replace(/\bstyle='([^']*url\([^']*)'/gi, (_m, css) => `style='${rewriteStyleAttr(css)}'`);
     // <base href> must point at the FINAL document's directory (after server-side
     // redirects), not the host root. e.g. greeneple.net/ → /main/main.php uses "../img/..";
     // with base at host root, ".." over-climbs past the host segment and breaks. The real
     // site clamps ".." at the domain root, so base must mirror the final doc directory.
-    let finalDocPath = fullUrl.pathname;
-    try {
-      const ru = new URL(resp.url);
-      if (ru.host === host) finalDocPath = ru.pathname;
-    } catch {}
-    const finalDir = finalDocPath.replace(/[^/]*$/, "") || "/";
-    const baseHref = `${proxyOrigin}/api/proxy/a/${encodedHost}${finalDir}`;
-    const headInject = `${injectedScripts}<base href="${baseHref}">`;
-    // Next.js App Router streaming responses often have NO literal <head>/<html>/<body>
-    // tags — they start straight with <script>/<meta>. Our inject (marker, proxify,
-    // URL normalization, click intercept) MUST still be added, or the site has no proxy
-    // behavior at all (no escape recovery, cross-origin nav escapes, blank hydration).
-    // Fall back to <html>, else prepend at the very top so it parses into <head> first.
-    if (/<head[^>]*>/i.test(html)) {
-      html = html.replace(/<head([^>]*)>/i, `<head$1>${headInject}`);
-    } else if (/<html[^>]*>/i.test(html)) {
-      html = html.replace(/<html([^>]*)>/i, `<html$1><head>${headInject}</head>`);
-    } else {
-      html = `<head>${headInject}</head>` + html;
+    if (isDocument) {
+      let finalDocPath = fullUrl.pathname;
+      try {
+        const ru = new URL(resp.url);
+        if (ru.host === host) finalDocPath = ru.pathname;
+      } catch {}
+      const finalDir = finalDocPath.replace(/[^/]*$/, "") || "/";
+      const baseHref = `${proxyOrigin}/api/proxy/a/${encodedHost}${finalDir}`;
+      const headInject = `${injectedScripts}<base href="${baseHref}">`;
+      // Next.js App Router streaming responses often have NO literal <head>/<html>/<body>
+      // tags — they start straight with <script>/<meta>. Our inject (marker, proxify,
+      // URL normalization, click intercept) MUST still be added, or the site has no proxy
+      // behavior at all (no escape recovery, cross-origin nav escapes, blank hydration).
+      // Fall back to <html>, else prepend at the very top so it parses into <head> first.
+      if (/<head[^>]*>/i.test(html)) {
+        html = html.replace(/<head([^>]*)>/i, `<head$1>${headInject}`);
+      } else if (/<html[^>]*>/i.test(html)) {
+        html = html.replace(/<html([^>]*)>/i, `<html$1><head>${headInject}</head>`);
+      } else {
+        html = `<head>${headInject}</head>` + html;
+      }
+      html = html.replace(
+        /if\s*\(\s*(?:top|window\.top|parent)\s*!==?\s*(?:self|window\.self|window)\s*\)[^}]*}/gi,
+        ""
+      );
     }
-    html = html.replace(
-      /if\s*\(\s*(?:top|window\.top|parent)\s*!==?\s*(?:self|window\.self|window)\s*\)[^}]*}/gi,
-      ""
-    );
 
     return new Response(html, {
-      status: 200,
+      status: isDocument ? 200 : resp.status,
       headers: {
         "content-type": "text/html; charset=utf-8",
         "access-control-allow-origin": "*",
