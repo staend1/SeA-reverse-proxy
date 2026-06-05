@@ -248,6 +248,13 @@ async function handleProxy(
         "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
     };
+    // Forward the browser's cookies to upstream. Anti-bot JS challenges (e.g.
+    // jireheng's CUPID/slowAES page, served to datacenter IPs like Vercel's) set a
+    // cookie via document.cookie on OUR origin and re-enter with ?ckattempt=1 — the
+    // challenge only clears if that cookie reaches the upstream server. Sites ignore
+    // unknown cookies, so the shared demo-origin jar is harmless to forward.
+    const cookie = request.headers.get("cookie");
+    if (cookie) fetchHeaders["Cookie"] = cookie;
     let bodyBuf: ArrayBuffer | undefined;
     if (method === "POST") {
       bodyBuf = await request.arrayBuffer();
