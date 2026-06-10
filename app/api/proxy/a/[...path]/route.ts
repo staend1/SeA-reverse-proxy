@@ -500,6 +500,19 @@ return u;
 }
 history.replaceState=function(s,t,u){try{_origReplaceState(s,t,safeHist(u));}catch(e){}};
 history.pushState=function(s,t,u){try{_origPushState(s,t,safeHist(u));}catch(e){}};
+// Sites embed their own hostname in API REQUEST BODIES — e.g. Notion-hosted sites
+// (actnova.io) send location.hostname as "spaceDomain" to getPublicPageDataForDomain;
+// under the proxy that's OUR hostname, so upstream resolves the wrong site and the
+// Notion app renders "page not found". URL rewriting can't reach this. Rewrite
+// proxy-host JSON string values back to the target host, only on same-site
+// (proxy-routed) requests to keep the blast radius minimal.
+function fixReqBody(b){
+if(typeof b!=='string'||b.indexOf(location.hostname)===-1)return b;
+try{
+return b.split('"'+location.host+'"').join('"'+TARGET_HOST+'"').split('"'+location.hostname+'"').join('"'+TARGET_HOST+'"');
+}catch(e){return b;}
+}
+function isProxiedUrl(u){return typeof u==='string'&&(u.indexOf('/api/proxy')===0||u.indexOf(PROXY_ORIGIN+'/api/proxy')===0);}
 var _origFetch=window.fetch;
 window.fetch=function(resource,opts){
 if(typeof resource==='string')resource=proxify(resource);
@@ -507,13 +520,43 @@ else if(resource&&typeof resource==='object'&&resource.url){
 var u2=proxify(resource.url);
 if(u2!==resource.url)resource=new Request(u2,resource);
 }
-return _origFetch.call(this,resource,opts);
+if(opts&&typeof opts.body==='string'&&isProxiedUrl(typeof resource==='string'?resource:resource&&resource.url)){
+var nb=fixReqBody(opts.body);
+if(nb!==opts.body){opts=Object.assign({},opts);opts.body=nb;}
+}
+var fp=_origFetch.call(this,resource,opts);
+// Notion-hosted sites: the client router maps domain→homepage from location.hostname,
+// which under the proxy is OUR host → "page not found" even though every data call
+// succeeds (fixReqBody above fixes the spaceDomain lookup, but a later hostname check
+// still kills the root-path render). A /<pageId> path resolves WITHOUT the domain
+// mapping (verified: renders fully), so on the root path hop to publicHomePage once.
+try{
+var fu=typeof resource==='string'?resource:(resource&&resource.url)||'';
+if(fu.indexOf('/api/v3/getPublicPageDataForDomain')!==-1){
+fp.then(function(r){try{r.clone().json().then(function(d){
+try{
+if(!d||!d.publicHomePage)return;
+var sub=location.pathname.indexOf(PROXY_PREFIX)===0?location.pathname.slice(PROXY_PREFIX.length):location.pathname;
+if(sub===''||sub==='/'){
+location.replace(PROXY_FULL+'/'+String(d.publicHomePage).replace(/-/g,''));
+}
+}catch(e){}
+}).catch(function(){});}catch(e){}});
+}
+}catch(e){}
+return fp;
 };
 var _origOpen=XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open=function(method,url){
 var args=Array.prototype.slice.call(arguments);
 args[1]=proxify(url);
+this.__seaPx=isProxiedUrl(args[1]);
 return _origOpen.apply(this,args);
+};
+var _origSend=XMLHttpRequest.prototype.send;
+XMLHttpRequest.prototype.send=function(body){
+if(this.__seaPx&&typeof body==='string')body=fixReqBody(body);
+return _origSend.call(this,body);
 };
 // ServiceWorker registration can't work through the proxy: the SW script URL resolves
 // against our bare origin (404) and even proxied its scope wouldn't match. Sites
