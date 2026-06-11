@@ -217,17 +217,34 @@ async function handleProxy(
     return resolveRel(t);
   };
   // srcset is image assets → use the asset rewriter (cross-origin allowed).
-  const rewriteSrcset = (val: string): string =>
-    val
-      .split(",")
-      .map((part) => {
-        const t = part.trim();
-        const i = t.search(/\s/);
-        const url = i === -1 ? t : t.slice(0, i);
-        const rest = i === -1 ? "" : t.slice(i);
-        return toProxyAsset(url) + rest;
-      })
-      .join(", ");
+  // Parse per the srcset spec, NOT by splitting on commas: image CDN URLs embed commas
+  // in the path (wixstatic .../fill/w_1800,h_104,al_c,.../x.png). A naive split+", "
+  // join inserts spaces after in-URL commas, which makes the browser cut each candidate
+  // at the first comma → truncated URL → broken image. A URL is a run of non-whitespace;
+  // a comma only separates candidates after a descriptor or at the end of a URL.
+  const mapSrcset = (val: string, fn: (u: string) => string): string => {
+    const out: string[] = [];
+    let i = 0;
+    const n = val.length;
+    while (i < n) {
+      while (i < n && /[\s,]/.test(val[i])) i++;
+      if (i >= n) break;
+      const start = i;
+      while (i < n && !/\s/.test(val[i])) i++;
+      let url = val.slice(start, i);
+      let desc = "";
+      if (url.endsWith(",")) {
+        url = url.replace(/,+$/, "");
+      } else {
+        const ds = i;
+        while (i < n && val[i] !== ",") i++;
+        desc = val.slice(ds, i).trim();
+      }
+      if (url) out.push(fn(url) + (desc ? " " + desc : ""));
+    }
+    return out.join(", ");
+  };
+  const rewriteSrcset = (val: string): string => mapSrcset(val, toProxyAsset);
   // url(...) in CSS is images/fonts → asset rewriter (cross-origin allowed, fixes CORS fonts).
   // Relative url() is left alone — it resolves against the CSS file's own proxied URL.
   // LESS interpolation (url(@{var}/x)) is left untouched — rewriting would corrupt the
@@ -603,22 +620,33 @@ e.stopImmediatePropagation();
 location.assign(pu);
 }
 },true);
-function proxifySrcset(s){
+// Spec-style srcset parse (NOT a comma split): CDN URLs embed commas in the path
+// (wixstatic .../fill/w_1800,h_104,.../x.png). Splitting on ',' and re-joining with
+// ', ' inserts spaces inside the URL, so the browser truncates each candidate at the
+// first comma → broken image. URL = run of non-whitespace; a comma is a separator
+// only after a descriptor or at the very end of a URL.
+function mapSrcset(s,fn){
 if(typeof s!=='string')return s;
-return s.split(',').map(function(p){
-var t=p.trim();var i=t.search(/\\s/);
-if(i===-1)return proxify(t);
-return proxify(t.slice(0,i))+t.slice(i);
-}).join(', ');
+var out=[];var i=0;var n=s.length;
+while(i<n){
+while(i<n&&/[\\s,]/.test(s.charAt(i)))i++;
+if(i>=n)break;
+var st=i;
+while(i<n&&!/\\s/.test(s.charAt(i)))i++;
+var url=s.slice(st,i);
+var desc='';
+if(url.charAt(url.length-1)===','){url=url.replace(/,+$/,'');}
+else{
+var ds=i;
+while(i<n&&s.charAt(i)!==',')i++;
+desc=s.slice(ds,i).replace(/^\\s+|\\s+$/g,'');
 }
-function proxifyAssetSrcset(s){
-if(typeof s!=='string')return s;
-return s.split(',').map(function(p){
-var t=p.trim();var i=t.search(/\\s/);
-if(i===-1)return proxifyAsset(t);
-return proxifyAsset(t.slice(0,i))+t.slice(i);
-}).join(', ');
+if(url)out.push(fn(url)+(desc?' '+desc:''));
 }
+return out.join(', ');
+}
+function proxifySrcset(s){return mapSrcset(s,proxify);}
+function proxifyAssetSrcset(s){return mapSrcset(s,proxifyAsset);}
 var _origSetAttr=Element.prototype.setAttribute;
 Element.prototype.setAttribute=function(name,value){
 var n=typeof name==='string'?name.toLowerCase():name;
