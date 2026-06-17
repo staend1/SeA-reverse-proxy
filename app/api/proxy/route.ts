@@ -85,12 +85,7 @@ export async function GET(request: NextRequest) {
           isOpen = false;
           nudgePending = false;
           if (nudgeFrame) { try { nudgeFrame.remove(); } catch (e) {} nudgeFrame = null; }
-          // salesmap chat persists the conversation in its own (salesmap.kr-origin,
-          // tab-scoped) storage keyed to the chat URL — reloading the SAME url restores
-          // it, so reset never cleared the conversation. Reload with a unique nonce so
-          // salesmap treats it as a fresh session. Scoped to sdr-reset only → no effect
-          // on normal chat-open/nudge flows.
-          if (chatFrame) { chatFrame.style.display = 'none'; try { chatFrame.src = baseUrl + (baseUrl.indexOf('?') < 0 ? '?' : '&') + 'reset=' + Date.now(); } catch (e) {} }
+          if (chatFrame) { chatFrame.style.display = 'none'; try { chatFrame.src = baseUrl; } catch (e) {} }
           resetEngagedTime();
           resetScrollDepth();
           trackPageView();
