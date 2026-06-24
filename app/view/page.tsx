@@ -14,49 +14,11 @@ function ViewInner() {
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(targetUrl);
   const [urlInput, setUrlInput] = useState(targetUrl);
-  const [resetFlash, setResetFlash] = useState(false);
   const scriptInjected = useRef(false);
-  const resetChannel = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
     setUrlInput(currentUrl);
   }, [currentUrl]);
-
-  // Reset the widget that lives in THIS window only.
-  const resetLocalWidget = () => {
-    window.postMessage({ type: "sdr-reset", code: dataCode }, window.location.origin);
-  };
-
-  // The conversation state lives in the salesmap.kr chat iframe, whose storage is
-  // shared across every proxy tab on the same origin. Resetting one window reloads
-  // its own iframe, but any other open tab with the same code re-syncs the old
-  // conversation back. So fan the reset out to all tabs (same code) via a
-  // BroadcastChannel and reload every chat iframe at once — leaving no live tab
-  // to restore the conversation.
-  useEffect(() => {
-    if (!dataCode || typeof BroadcastChannel === "undefined") return;
-    const ch = new BroadcastChannel(`sdr-reset-${dataCode}`);
-    ch.onmessage = (e) => {
-      if (e.data?.type === "sdr-reset" && e.data.code === dataCode) {
-        resetLocalWidget();
-      }
-    };
-    resetChannel.current = ch;
-    return () => {
-      ch.close();
-      resetChannel.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataCode]);
-
-  const handleReset = () => {
-    // Reset this tab immediately (BroadcastChannel never echoes to the sender)…
-    resetLocalWidget();
-    // …and tell every other proxy tab with the same code to reset simultaneously.
-    resetChannel.current?.postMessage({ type: "sdr-reset", code: dataCode });
-    setResetFlash(true);
-    setTimeout(() => setResetFlash(false), 1500);
-  };
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,13 +139,6 @@ function ViewInner() {
             className="w-full bg-zinc-800 rounded px-3 py-1 text-sm text-zinc-300 font-mono focus:outline-none focus:ring-1 focus:ring-violet-500/50"
           />
         </form>
-        <button
-          onClick={handleReset}
-          className="text-xs px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition"
-          title="대화/넛지 상태를 초기화하고 새 방문자처럼 다시 시작"
-        >
-          {resetFlash ? "✓ 초기화됨" : "대화 초기화"}
-        </button>
         <span
           className={`text-xs ${widgetLoaded ? "text-emerald-500" : "text-yellow-500"}`}
         >
