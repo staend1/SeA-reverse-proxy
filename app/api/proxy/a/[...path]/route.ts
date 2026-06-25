@@ -724,6 +724,17 @@ if(ds&&ds.set){try{Object.defineProperty(proto,'srcset',{configurable:true,enume
       /\bsrcset=(["'])([^"']*)\1/gi,
       (_m, q, val) => `srcset=${q}${rewriteSrcset(val)}${q}`
     );
+    // Astro islands: the client runtime reads <astro-island>'s component-url /
+    // renderer-url attributes and dynamic-import()s them. Astro emits these as
+    // root-absolute paths (e.g. /io/_astro/home.CMj3sfuf.js); a bare dynamic
+    // import() resolves them against our ORIGIN, not the path-prefixed <base>, so
+    // they escape the proxy → 404 → the island never hydrates → the page's main
+    // content stays blank (imweb.me). The generic href/src pass above doesn't
+    // cover these astro-specific attrs, so rewrite them like any same-site asset.
+    html = html.replace(
+      /\b(component-url|renderer-url)=(["'])([^"']*)\2/gi,
+      (_m, attr, q, val) => `${attr}=${q}${toProxy(val)}${q}`
+    );
     // Inline style="...url(...)..." and <style> blocks reference images/fonts too.
     html = html.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (_m, attrs, css) => `<style${attrs}>${rewriteCssUrls(css)}</style>`);
     // style ATTRIBUTES with url(...) — e.g. unipromotion's hero
