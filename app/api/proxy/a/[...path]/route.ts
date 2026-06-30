@@ -30,6 +30,50 @@ async function tlsFetch(url: string, init: RequestInit): Promise<Response> {
   }
 }
 
+// 업스트림 바이트를 올바른 charset으로 디코딩한다. cafe24 등 한국 호스팅 사이트는
+// EUC-KR(CP949)로 서빙하면서 HTTP 헤더에 charset을 안 주는 경우가 많다 — 그대로
+// resp.text()(UTF-8 가정)로 읽으면 한글이 전부 깨진다(mojibake). HTTP 헤더 charset →
+// (HTML이면) <meta charset> 순으로 인코딩을 결정해 디코딩하고, 사용한 charset을 함께 반환.
+// charset 미지정/UTF-8이면 기존과 동일하게 UTF-8 디코딩(회귀 없음), EUC-KR 등에서만 달라진다.
+const EUCKR_ALIASES = new Set([
+  "euc-kr",
+  "euckr",
+  "cp949",
+  "ks_c_5601-1987",
+  "ksc5601",
+  "ksc_5601",
+  "x-windows-949",
+  "windows-949",
+  "ms949",
+]);
+function decodeUpstream(
+  buf: ArrayBuffer,
+  contentTypeHeader: string | null,
+  sniffMeta: boolean
+): { text: string; charset: string } {
+  const bytes = new Uint8Array(buf);
+  let charset = "";
+  const hm = /charset\s*=\s*["']?\s*([\w-]+)/i.exec(contentTypeHeader || "");
+  if (hm) charset = hm[1].toLowerCase();
+  if (!charset && sniffMeta) {
+    // 문서 앞부분을 latin1로 훑어 meta charset을 찾는다. <meta charset="euc-kr">
+    // (HTML5 단축형)를 우선, 없으면 http-equiv content-type의 charset을 본다.
+    const head = new TextDecoder("latin1").decode(bytes.subarray(0, 4096));
+    const sm =
+      /<meta[^>]+charset\s*=\s*["']?\s*([\w-]+)/i.exec(head) ||
+      /charset\s*=\s*["']?\s*([\w-]+)/i.exec(head);
+    if (sm) charset = sm[1].toLowerCase();
+  }
+  if (!charset) charset = "utf-8";
+  if (EUCKR_ALIASES.has(charset)) charset = "euc-kr";
+  try {
+    return { text: new TextDecoder(charset).decode(bytes), charset };
+  } catch {
+    // 알 수 없는 charset 라벨 → UTF-8로 폴백(기존 동작).
+    return { text: new TextDecoder("utf-8").decode(bytes), charset: "utf-8" };
+  }
+}
+
 type Proto = "http" | "https";
 const PROTO_CACHE_KEY = "__seaProxyAutoProtoCache";
 const protoCache: Map<string, Proto> =
@@ -346,7 +390,11 @@ async function handleProxy(
     // (silently dropping the site's entire generated layout CSS). Serve the raw source
     // with url() rewriting; less.js fetches via XHR and ignores content-type.
     if (/\.less$/i.test(fullUrl.pathname)) {
-      const body = await resp.text();
+      const { text: body } = decodeUpstream(
+        await resp.arrayBuffer(),
+        resp.headers.get("content-type"),
+        false
+      );
       return new Response(rewriteCssUrls(body), {
         status: resp.status,
         headers: {
@@ -358,12 +406,23 @@ async function handleProxy(
     }
 
     if (contentType.includes("javascript") || contentType.includes("text/css")) {
-      let body = await resp.text();
+      const decoded = decodeUpstream(
+        await resp.arrayBuffer(),
+        contentType,
+        false
+      );
+      let body = decoded.text;
       if (contentType.includes("text/css")) body = rewriteCssUrls(body);
+      // 비-UTF-8로 디코딩했으면 응답은 UTF-8 바이트이므로 content-type charset도
+      // utf-8로 맞춘다(안 그러면 브라우저가 원본 charset으로 재해석해 다시 깨짐).
+      const outCt =
+        decoded.charset === "utf-8"
+          ? contentType
+          : contentType.replace(/;\s*charset=[\w-]+/i, "") + "; charset=utf-8";
       return new Response(body, {
         status: resp.status,
         headers: {
-          "content-type": contentType,
+          "content-type": outCt,
           "access-control-allow-origin": "*",
           "cache-control": "public, max-age=31536000, immutable",
         },
@@ -383,7 +442,27 @@ async function handleProxy(
       });
     }
 
-    let html = await resp.text();
+    const decodedHtml = decodeUpstream(
+      await resp.arrayBuffer(),
+      contentType,
+      true
+    );
+    let html = decodedHtml.text;
+
+    // EUC-KR 등 비-UTF-8 문서를 UTF-8로 디코딩해 내보내므로, 문서에 남은 원본
+    // charset 선언(<meta charset="euc-kr"> / http-equiv content-type)을 utf-8로
+    // 바꾼다. 안 그러면 브라우저가 원본 charset으로 재해석해 한글이 다시 깨진다.
+    if (decodedHtml.charset !== "utf-8") {
+      html = html
+        .replace(
+          /(<meta[^>]+charset\s*=\s*["']?\s*)[\w-]+/gi,
+          (_m, p1) => `${p1}utf-8`
+        )
+        .replace(
+          /(<meta[^>]+content\s*=\s*["'][^"']*charset\s*=\s*)[\w-]+/gi,
+          (_m, p1) => `${p1}utf-8`
+        );
+    }
 
     // Distinguish real DOCUMENT loads (top/iframe navigation) from XHR/fetch/etc that
     // happen to return text/html — via the browser's sec-fetch-dest header. Injecting
