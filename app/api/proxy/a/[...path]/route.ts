@@ -84,6 +84,19 @@ const protoCache: Map<string, Proto> =
   ((globalThis as unknown as Record<string, unknown>)[PROTO_CACHE_KEY] =
     new Map());
 
+// 호스트별로 마지막에 푼 testcookie 쿠키(예: "CUPID=...")를 캐시한다. Fluid Compute는
+// 인스턴스를 재사용하므로(= 같은 egress IP), 웜 인스턴스에서는 캐시된 쿠키가 유효해
+// 첫 요청부터 붙이면 챌린지 없이 통과 → 요청당 upstream 2회(챌린지+재요청)를 1회로 줄여
+// 이미지·CSS 동시 버스트가 상류 rate-limit에 걸리는 걸 완화한다. IP가 바뀐(콜드) 경우엔
+// 그냥 재챌린지되고 solveChallengeIfPresent가 새 값으로 갱신하므로 손해는 없다.
+const CUPID_CACHE_KEY = "__seaProxyAutoCupidCache";
+const cupidCache: Map<string, string> =
+  ((globalThis as unknown as Record<string, unknown>)[CUPID_CACHE_KEY] as
+    | Map<string, string>
+    | undefined) ??
+  ((globalThis as unknown as Record<string, unknown>)[CUPID_CACHE_KEY] =
+    new Map());
+
 // testcookie-nginx-module(안티봇) 챌린지를 서버측에서 해결한다. 일부 한국 호스팅
 // (leadermine.co.kr 등)은 데이터센터 IP(Vercel)에 JS 쿠키 챌린지를 건다: 실제 콘텐츠
 // 대신 slowAES로 CUPID 쿠키를 계산해 심고 ?ckattempt=N으로 재진입하는 HTML을 내려준다.
@@ -113,6 +126,7 @@ function solveTestCookie(html: string): { header: string } | null {
 // 챌린지 응답이면 CUPID를 계산해 같은 IP로 1회 재요청, 아니면 원본 응답 그대로 반환.
 // text/html 응답에만 적용(이미지/CSS의 정상 응답은 content-type이 달라 건드리지 않음).
 async function solveChallengeIfPresent(
+  host: string,
   url: string,
   init: RequestInit,
   response: Response
@@ -127,10 +141,10 @@ async function solveChallengeIfPresent(
   }
   const solved = solveTestCookie(body);
   if (!solved) return response;
-  // 기존 Cookie 헤더와 병합(브라우저가 이미 보낸 쿠키 보존).
+  // 푼 testcookie 쿠키만 실어 재요청(브라우저 쿠키 병합 안 함 — 공유 도메인에 누적된
+  // 쿠키까지 상류로 보내면 nginx가 "Cookie 헤더 초과"로 Bad Request를 낸다).
   const h = new Headers(init.headers as HeadersInit | undefined);
-  const prev = h.get("cookie");
-  h.set("cookie", prev ? `${prev}; ${solved.header}` : solved.header);
+  h.set("cookie", solved.header);
   try {
     const retry = await tlsFetch(url, { ...init, headers: h });
     // 재요청도 챌린지면(예: IP가 그새 또 바뀜) 원본을 반환 — 무한 루프 방지(1회만).
@@ -139,6 +153,7 @@ async function solveChallengeIfPresent(
       const rbody = await retry.clone().text();
       if (solveTestCookie(rbody)) return response;
     }
+    cupidCache.set(host, solved.header); // 통과한 값만 캐시(웜 인스턴스 재사용).
     return retry;
   } catch {
     return response;
@@ -177,7 +192,7 @@ async function fetchWithProtocolFallback(
         } catch {}
       }
       // 안티봇 testcookie 챌린지면 같은 egress IP로 CUPID 붙여 재요청(status 검사 전).
-      response = await solveChallengeIfPresent(url, init, response);
+      response = await solveChallengeIfPresent(host, url, init, response);
       if (response.status >= 400) {
         // Keep only the FIRST error response (preferred protocol order) — if the
         // second protocol also errors we must not return/cache the second one
@@ -373,13 +388,13 @@ async function handleProxy(
         "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
     };
-    // 브라우저가 보낸 Cookie를 origin에 전달. 일부 호스팅(leadermine 등 Imunify360류)은
-    // 데이터센터 IP에 JS 쿠키 챌린지(CUPID + ?ckattempt=N)를 걸어오는데, 챌린지 스크립트가
-    // iframe 안에서 document.cookie로 심은 쿠키가 origin까지 가야 통과된다(안 가면 3회 후 403).
-    // Set-Cookie 응답 패스스루는 넣지 않는다 — 단일 프록시 도메인에 쿠키가 누적돼
-    // 431을 유발한 전례가 있고(reset 건 revert), 챌린지 쿠키는 JS로 심어져 요청 방향만으로 충분.
-    const cookie = request.headers.get("cookie");
-    if (cookie) fetchHeaders["Cookie"] = cookie;
+    // 안티봇 testcookie 챌린지(leadermine 등)는 solveChallengeIfPresent가 서버측에서
+    // 직접 푼다. 브라우저 Cookie 헤더 통째 전달은 하지 않는다 — 단일 프록시 도메인에
+    // 여러 사이트 쿠키가 누적돼(누적 431 전례) 상류로 다 보내면 nginx가 "Cookie 헤더 초과"로
+    // Bad Request를 낸다. 대신 이전에 서버가 푼 CUPID를 캐시(웜 인스턴스=같은 egress IP)해
+    // 첫 요청부터 붙여, 챌린지 재요청을 줄이고 헤더는 작게 유지한다.
+    const cachedCupid = cupidCache.get(host);
+    if (cachedCupid) fetchHeaders["Cookie"] = cachedCupid;
     let bodyBuf: ArrayBuffer | undefined;
     if (method === "POST") {
       bodyBuf = await request.arrayBuffer();
