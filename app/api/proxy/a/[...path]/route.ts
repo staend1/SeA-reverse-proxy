@@ -309,6 +309,13 @@ async function handleProxy(
         "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
     };
+    // 브라우저가 보낸 Cookie를 origin에 전달. 일부 호스팅(leadermine 등 Imunify360류)은
+    // 데이터센터 IP에 JS 쿠키 챌린지(CUPID + ?ckattempt=N)를 걸어오는데, 챌린지 스크립트가
+    // iframe 안에서 document.cookie로 심은 쿠키가 origin까지 가야 통과된다(안 가면 3회 후 403).
+    // Set-Cookie 응답 패스스루는 넣지 않는다 — 단일 프록시 도메인에 쿠키가 누적돼
+    // 431을 유발한 전례가 있고(reset 건 revert), 챌린지 쿠키는 JS로 심어져 요청 방향만으로 충분.
+    const cookie = request.headers.get("cookie");
+    if (cookie) fetchHeaders["Cookie"] = cookie;
     let bodyBuf: ArrayBuffer | undefined;
     if (method === "POST") {
       bodyBuf = await request.arrayBuffer();
