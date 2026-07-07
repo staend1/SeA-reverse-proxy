@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { Agent, fetch as undiciFetch } from "undici";
+import { createDecipheriv } from "crypto";
 
 // nodejs 런타임 필수: edge fetch는 TLS cert 검증을 우회할 수 없다. 일부 사이트
 // (spidercore.io, bigtech.co.kr 등)는 intermediate CA를 안 보내 undici가
@@ -83,6 +84,67 @@ const protoCache: Map<string, Proto> =
   ((globalThis as unknown as Record<string, unknown>)[PROTO_CACHE_KEY] =
     new Map());
 
+// testcookie-nginx-module(안티봇) 챌린지를 서버측에서 해결한다. 일부 한국 호스팅
+// (leadermine.co.kr 등)은 데이터센터 IP(Vercel)에 JS 쿠키 챌린지를 건다: 실제 콘텐츠
+// 대신 slowAES로 CUPID 쿠키를 계산해 심고 ?ckattempt=N으로 재진입하는 HTML을 내려준다.
+// 브라우저가 심은 쿠키를 프록시가 전달해도, Vercel Fluid Compute의 egress IP가 요청마다
+// 달라 서브리소스(이미지·CSS 수십개 동시)가 각기 다른 IP로 나가면 CUPID가 IP와 안 맞아
+// 재챌린지 → 이미지/CSS 대량 실패(프리로더가 안 걷힘). 해결: 챌린지를 감지하면 "같은 함수
+// 호출"(= 같은 egress IP) 안에서 CUPID를 계산해 Cookie로 붙여 1회 재요청한다. 검증은
+// slowAES.decrypt(c,2,a,b) == AES-128-CBC-decrypt(ciphertext=c, key=a, iv=b)의 hex이며
+// 표준 AES와 동일함을 확인함(브라우저가 심는 값과 바이트 일치).
+function solveTestCookie(html: string): { header: string } | null {
+  if (!html.includes("slowAES.decrypt")) return null;
+  const nums = [...html.matchAll(/toNumbers\("([0-9a-f]{32})"\)/gi)].map((m) => m[1]);
+  if (nums.length < 3) return null;
+  const [key, iv, ct] = nums; // 페이지 선언 순서: a(key), b(iv), c(ciphertext)
+  try {
+    const d = createDecipheriv("aes-128-cbc", Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+    d.setAutoPadding(false);
+    const value = Buffer.concat([d.update(Buffer.from(ct, "hex")), d.final()]).toString("hex");
+    const nameM = /document\.cookie\s*=\s*["']([^"'=]+)=/.exec(html);
+    const name = nameM ? nameM[1] : "CUPID";
+    return { header: `${name}=${value}` };
+  } catch {
+    return null;
+  }
+}
+
+// 챌린지 응답이면 CUPID를 계산해 같은 IP로 1회 재요청, 아니면 원본 응답 그대로 반환.
+// text/html 응답에만 적용(이미지/CSS의 정상 응답은 content-type이 달라 건드리지 않음).
+async function solveChallengeIfPresent(
+  url: string,
+  init: RequestInit,
+  response: Response
+): Promise<Response> {
+  const ct = response.headers.get("content-type") || "";
+  if (!ct.includes("text/html")) return response;
+  let body: string;
+  try {
+    body = await response.clone().text();
+  } catch {
+    return response;
+  }
+  const solved = solveTestCookie(body);
+  if (!solved) return response;
+  // 기존 Cookie 헤더와 병합(브라우저가 이미 보낸 쿠키 보존).
+  const h = new Headers(init.headers as HeadersInit | undefined);
+  const prev = h.get("cookie");
+  h.set("cookie", prev ? `${prev}; ${solved.header}` : solved.header);
+  try {
+    const retry = await tlsFetch(url, { ...init, headers: h });
+    // 재요청도 챌린지면(예: IP가 그새 또 바뀜) 원본을 반환 — 무한 루프 방지(1회만).
+    const rct = retry.headers.get("content-type") || "";
+    if (rct.includes("text/html")) {
+      const rbody = await retry.clone().text();
+      if (solveTestCookie(rbody)) return response;
+    }
+    return retry;
+  } catch {
+    return response;
+  }
+}
+
 async function fetchWithProtocolFallback(
   host: string,
   pathAndSearch: string,
@@ -114,6 +176,8 @@ async function fetchWithProtocolFallback(
           if (retry.ok) response = retry;
         } catch {}
       }
+      // 안티봇 testcookie 챌린지면 같은 egress IP로 CUPID 붙여 재요청(status 검사 전).
+      response = await solveChallengeIfPresent(url, init, response);
       if (response.status >= 400) {
         // Keep only the FIRST error response (preferred protocol order) — if the
         // second protocol also errors we must not return/cache the second one
